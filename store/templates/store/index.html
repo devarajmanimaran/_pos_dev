@@ -61,30 +61,20 @@
     </style>
 </head>
 <body>
-    <!--<div class="sidebar">
+    <div class="sidebar">
         <img src="{% static 'store/logo.png' %}" alt="Logo">
         <ul>
             <li>
                 Material Inward
                 <ul>
-                    <li>Inbound Check</li>
+                    <!-- <li>Inbound Check</li> -->
                     <li><a href="{% url 'inbound_check' %}">Inbound Check</a></li>
                     <li>Put Away</li>
                 </ul>
             </li>
             <li>Billing</li>
         </ul>
-    </div> -->
-    <div class="sidebar">
-        <ul>
-            <li class="menu-item">Material Inward</li>
-            <ul class="submenu">
-                <li class="submenu-item"><a href="{% url 'inbound_check' %}">Inbound Check</a></li>
-                <li class="submenu-item"><a href="#">Put Away</a></li>
-            </ul>
-            <li class="menu-item"><a href="#">Billing</a></li>
-        </ul>
-    </div>    
+    </div>
     <div class="content">
         <h1>Welcome to the Supermarket Management System</h1>
     </div>

@@ -26,37 +26,19 @@
     <table>
         <thead>
             <tr>
-                <th>PO_ORDER_NUMBER</th>
-                <th>PO_HEADER_ID</th>
-                <th>PO_LINE_ID</th>
-                <th>LINE_NUMBER</th>
-                <th>PRODUCT</th>
-                <th>ORDERED_QTY</th>
-                <th>RECEVIED_QTY</th>
-                <th>RETURN_QTY</th>
-                <th>LOT</th>
-                <th>RETURN_REASON</th>
+                <th>PO_NO</th>
                 <th>CREATED_DATE</th>
                 <th>STATUS</th>
-                <th>Supplier_ID</th>
+                <th>SUPPLIER_ID</th>
             </tr>
         </thead>
         <tbody>
             {% for row in data %}
             <tr>
-                <td>{{ row.PO_ORDER_NUMBER }}</td>
-                <td>{{ row.PO_HEADER_ID }}</td>
-                <td>{{ row.PO_LINE_ID }}</td>
-                <td>{{ row.LINE_NUMBER }}</td>
-                <td>{{ row.PRODUCT }}</td>
-                <td>{{ row.ORDERED_QTY }}</td>
-                <td>{{ row.RECEVIED_QTY }}</td>
-                <td>{{ row.RETURN_QTY }}</td>
-                <td>{{ row.LOT }}</td>
-                <td>{{ row.RETURN_REASON }}</td>
+                <td>{{ row.PO_NO }}</td>
                 <td>{{ row.CREATED_DATE }}</td>
                 <td>{{ row.STATUS }}</td>
-                <td>{{ row.Supplier_ID }}</td>
+                <td>{{ row.SUPPLIER_ID }}</td>
             </tr>
             {% endfor %}
         </tbody>

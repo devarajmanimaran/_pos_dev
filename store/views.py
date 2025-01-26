@@ -8,9 +8,12 @@ def homepage(request):
 def inbound_check(request):
     # Query data from PostgreSQL table "pos_dev"."PO_ORDER_LINES"
     query = """
-    SELECT "PO_ORDER_NUMBER", PO_HEADER_ID, PO_LINE_ID, LINE_NUMBER, PRODUCT, ORDERED_QTY,
-           RECEVIED_QTY, RETURN_QTY, LOT, RETURN_REASON, CREATED_DATE, STATUS,"Supplier_ID"
-    FROM "pos_dev"."PO_ORDER_LINES"
+    select "PO_ORDER_NUMBER"
+        "PO_HEADER_ID",
+        "CREATED_DATE",
+        "STATUS",
+        "Supplier_ID"
+        from "pos_dev"."PO_ORDER_HEADER"
     """
     with connection.cursor() as cursor:
         cursor.execute(query)
@@ -18,8 +21,7 @@ def inbound_check(request):
 
     # Prepare the data as a list of dictionaries
     columns = [
-        'PO_ORDER_NUMBER', 'PO_HEADER_ID', 'PO_LINE_ID', 'LINE_NUMBER', 'PRODUCT', 'ORDERED_QTY',
-        'RECEVIED_QTY', 'RETURN_QTY', 'LOT', 'RETURN_REASON', 'CREATED_DATE', 'STATUS', 'Supplier_ID'
+        'PO_NO', 'CREATED_DATE', 'STATUS', 'SUPPLIER_ID'
     ]
     data = [dict(zip(columns, row)) for row in rows]
 
