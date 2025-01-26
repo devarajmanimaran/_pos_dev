@@ -3,80 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supermarket App</title>
+    <title>Home Page</title>
+    {% load static %}  <!-- This command is to hold the places i used static for example logo -->
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            display: flex;
         }
-
         .sidebar {
             width: 250px;
-            background-color: #2c3e50;
-            color: #ecf0f1;
+            height: 100vh;
+            background-color: #333;
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            height: 100vh;
         }
-
-        .logo {
-            height: 150px;
-            width: 150px;
-            background-color: #34495e;
-            margin: 0 auto 20px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .nav-links {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .nav-links li {
-            margin: 15px 0;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #ecf0f1;
-            padding: 10px 15px;
+        .sidebar img {
+            width: 80%;
+            margin: 10px auto;
             display: block;
             border-radius: 5px;
-            transition: background 0.3s ease;
         }
-
-        .nav-links a:hover {
-            background-color: #34495e;
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
         }
-
+        .sidebar ul li {
+            padding: 15px;
+            cursor: pointer;
+            position: relative;
+        }
+        .sidebar ul li:hover {
+            background-color: #444;
+        }
+        .sidebar ul li ul {
+            display: none;
+            list-style: none;
+            margin: 0;
+            padding-left: 20px;
+            background-color: #444;
+        }
+        .sidebar ul li:hover ul {
+            display: block;
+        }
+        .sidebar ul li ul li {
+            padding: 10px;
+            font-size: 0.9em;
+        }
         .content {
-            flex: 1;
+            margin-left: 250px;
             padding: 20px;
-            background-color: #f4f4f4;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo">
-            Logo
-        </div>
-        <ul class="nav-links">
-            <li><a href="#">Material Inward</a></li>
-            <li><a href="#">Billing</a></li>
+        <img src="{% static 'store/logo.png' %}" alt="Logo">
+        <ul>
+            <li>
+                Material Inward
+                <ul>
+                    <li>Inbound Check</li>
+                    <li>Put Away</li>
+                </ul>
+            </li>
+            <li>Billing</li>
         </ul>
     </div>
     <div class="content">
-        <h1>Welcome to the Supermarket App</h1>
-        <p>Select an option from the menu to get started.</p>
+        <h1>Welcome to the Supermarket Management System</h1>
     </div>
 </body>
 </html>
