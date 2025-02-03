@@ -55,7 +55,7 @@
                     e.preventDefault();
                     let poId = this.getAttribute("data-po-id");
                     
-                    fetch(`/po-details/${poId}/`)
+                    fetch(`/material-inward/po-details/${poId}/`)
                         .then(response => response.json())
                         .then(data => {
                             if (data.error) {

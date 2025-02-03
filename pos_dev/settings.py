@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'store',
-    'putaway'
+    'putaway',
+    'material_inward'
 ]
 
 MIDDLEWARE = [

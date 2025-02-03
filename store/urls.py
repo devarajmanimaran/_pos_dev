@@ -1,11 +1,11 @@
 from django.urls import path
 from . import views
-from .views import get_po_details
+from django.urls import path, include
+# from .views import get_po_details
 
 urlpatterns = [
     path('', views.homepage, name='homepage'),
-    path('inbound-check/', views.inbound_check, name='inbound_check'),
-    path('po-details/<str:po_id>/', get_po_details, name='po-details'),  # Change <int:po_id> to <str:po_id>
+    path('material-inward/', include('material_inward.urls', namespace='material_inward'))
 ]
 
 

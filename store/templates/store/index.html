@@ -166,16 +166,12 @@
         </div>
         <ul class="menu">
             <li class="menu-item" data-tooltip="Material Inward">
-                <a href="{% url 'inbound_check' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
+                <a href="{% url 'material_inward:material_inward' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
                     <i class="fas fa-truck-moving"></i>
                     <span class="menu-text">Material Inward</span>
                 </a>
             </li>
-            <!-- <li class="menu-item" data-tooltip="Put Away">
-                <i class="fas fa-archive"></i>
-                <span class="menu-text">Put Away</span>
-            </li> -->
-            <li class="menu-item" data-tooltip="Put Away">
+             <li class="menu-item" data-tooltip="Put Away">
                 <a href="{% url 'putaway_home' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
                     <i class="fas fa-archive"></i>
                     <span class="menu-text">Put Away</span>
@@ -202,7 +198,7 @@
         <h1>Welcome to the Supermarket Management System</h1>
         <p>Efficiently manage your supermarket operations with our POS system. Streamline material inward, putaway, billing, and more.</p>
         <div class="cta-buttons">
-            <a href="{% url 'inbound_check' %}">Start Material Inward</a>
+            <a href="{% url 'material_inward:material_inward' %}">Start Material Inward</a>
             <a href="#">Create Purchase Order</a>
         </div>
     </div>
