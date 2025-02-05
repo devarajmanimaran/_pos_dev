@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Summary</title>
+    <style>
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 18px;
+            text-align: left;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid black;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h2>Billing Summary</h2>
+    <table>
+        <tr>
+            <th>Product_ID</th>
+            <th>Product_Name</th>
+            <th>Unit_Price</th>
+            <th>Discount_Price</th>
+            <th>Qty</th>
+            <th>CGST</th>
+            <th>SGST</th>
+            <th>Total</th>
+        </tr>
+        <tr>
+            <td>{{ data.Product_ID }}</td>
+            <td>{{ data.Product_Name }}</td>
+            <td>{{ data.Unit_Price }}</td>
+            <td>{{ data.Discount_Price }}</td>
+            <td>{{ data.Qty }}</td>
+            <td>{{ data.CGST }}</td>
+            <td>{{ data.SGST }}</td>
+            <td>{{ data.Total }}</td>
+        </tr>
+    </table>
+    <a href="{% url 'bill_value' %}">Go Back</a>
+</body>
+</html>

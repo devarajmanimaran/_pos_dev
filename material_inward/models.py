@@ -6,7 +6,7 @@ class POOrderLines(models.Model):
     po_line_num = models.DecimalField(max_digits=10, decimal_places=1)
     po_header_id = models.IntegerField()
     po_number = models.CharField(max_length=50)
-    product_id = models.IntegerField()
+    product_id = models.CharField(max_length=50)
     product_name = models.CharField(max_length=255)
     quantity_ordered = models.IntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -18,4 +18,4 @@ class POOrderLines(models.Model):
     notes = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = '"pos_dev"."Po_Order_Lines"'  # This explicitly tells Django to use "po_order_lines" table
+        db_table = 'pos_dev.Po_Order_Lines'  # This explicitly tells Django to use "po_order_lines" table

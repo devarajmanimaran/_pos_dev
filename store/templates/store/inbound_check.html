@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbound Check</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inbound Check</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>PO_NO</th>
+                <th>CREATED_DATE</th>
+                <th>STATUS</th>
+                <th>SUPPLIER_ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.PO_NO }}</td>
+                <td>{{ row.CREATED_DATE }}</td>
+                <td>{{ row.STATUS }}</td>
+                <td>{{ row.SUPPLIER_ID }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

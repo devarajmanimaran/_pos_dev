@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'store',
     'putaway',
-    'material_inward'
+    'material_inward',
+    'billing',
 ]
 
 MIDDLEWARE = [
@@ -134,5 +135,8 @@ DATABASES = {
         'PASSWORD': 'admin2025',
         'HOST': 'localhost',
         'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=pos_dev',
+        }
     }
 }
