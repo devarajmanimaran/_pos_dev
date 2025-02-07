@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'store',
     'putaway',
-    'material_inward'
+    'material_inward',
+    'billing',
 ]
 
 MIDDLEWARE = [
@@ -131,6 +132,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'supermarket_pos',
         'USER': 'admin_user',
+        'ROLE': 'db_admin',
         'PASSWORD': 'admin2025',
         'HOST': 'localhost',
         'PORT': '5432',

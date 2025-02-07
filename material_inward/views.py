@@ -15,7 +15,7 @@ def material_inward(request):
         order_date,
         status,
         supplier_id
-        from "pos_dev"."Po_Order_Headers"
+        from pos_dev.Po_Order_Headers
     """
     with connection.cursor() as cursor:
         cursor.execute(query)
@@ -40,7 +40,10 @@ def get_po_details(request, po_id):
             "po_line_id": order_line.po_line_id,
             "po_number": order_line.po_number,
             "product_name": order_line.product_name,
+            "priority": order_line.priority,
             "quantity_ordered": order_line.quantity_ordered,
+            "uom": order_line.uom,
+            "quantity_invoice": order_line.quantity_invoice,
             "quantity_received": order_line.quantity_received,
             "quantity_accepted": order_line.quantity_accepted,
             "quantity_rejected": order_line.quantity_rejected,

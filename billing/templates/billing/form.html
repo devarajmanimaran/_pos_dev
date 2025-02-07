@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Billing System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .billing-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        .table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+        }
+
+        .footer-actions {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .total-cell {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="billing-container">
+            <div class="header">
+                <h1>POS System</h1>
+                <div class="total-display">
+                    Total: ₹<span id="grand-total">0.00</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">Product ID</th>
+                            <th style="width: 25%">Product Name</th>
+                            <th style="width: 10%">Unit Price</th>
+                            <th style="width: 10%">Discount</th>
+                            <th style="width: 8%">Qty</th>
+                            <th style="width: 8%">CGST</th>
+                            <th style="width: 8%">SGST</th>
+                            <th style="width: 12%">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body">
+                        <tr class="item-row">
+                            <td><input type="text" class="product-id" required></td>
+                            <td class="product-name"></td>
+                            <td class="unit-price"></td>
+                            <td class="discount-price"></td>
+                            <td><input type="number" class="quantity" required></td>
+                            <td class="cgst"></td>
+                            <td class="sgst"></td>
+                            <td class="total-cell"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="footer-actions">
+                <button type="button" class="btn btn-primary" onclick="addNewRow()">Add Item (F2)</button>
+                <button type="button" class="btn btn-success" onclick="processPayment()">Process Payment (F9)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let grandTotal = 0;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            addRowEventListeners(document.querySelector('.item-row'));
+        });
+
+        function addNewRow() {
+            const tbody = document.getElementById('items-body');
+            const newRow = document.querySelector('.item-row').cloneNode(true);
+            newRow.querySelectorAll('input').forEach(input => input.value = '');
+            newRow.querySelectorAll('td:not(:first-child):not(:nth-child(5))').forEach(td => td.textContent = '');
+            tbody.appendChild(newRow);
+            addRowEventListeners(newRow);
+            newRow.querySelector('.product-id').focus();
+        }
+
+        function addRowEventListeners(row) {
+            row.querySelector('.product-id').addEventListener('keydown', handleProductIdEnter);
+            row.querySelector('.quantity').addEventListener('keydown', handleQuantityEnter);
+        }
+
+        function handleProductIdEnter(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                event.target.closest('tr').querySelector('.quantity').focus();
+            }
+        }
+
+        async function handleQuantityEnter(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const row = event.target.closest('tr');
+                const productId = row.querySelector('.product-id').value;
+                const quantity = row.querySelector('.quantity').value;
+
+                if (!productId || !quantity) {
+                    alert('Please fill both Product ID and Quantity');
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('product_id', productId);
+                    formData.append('qty', quantity);
+                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                    const response = await fetch("{% url 'bill_value' %}", {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Update row with received data
+                    row.querySelector('.product-name').textContent = data.Product_Name;
+                    row.querySelector('.unit-price').textContent = data.Unit_Price;
+                    row.querySelector('.discount-price').textContent = data.Discount_Price;
+                    row.querySelector('.cgst').textContent = data.CGST;
+                    row.querySelector('.sgst').textContent = data.SGST;
+                    row.querySelector('.total-cell').textContent = data.Total.toFixed(2);
+
+                    // Update grand total
+                    grandTotal += data.Total;
+                    document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+
+                    // Add new row and focus
+                    addNewRow();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to process item. Please check inputs and try again.');
+                }
+            }
+        }
+
+        function processPayment() {
+            // Implement payment processing logic here
+            const transactionData = {
+                items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                    productId: row.querySelector('.product-id').value,
+                    quantity: row.querySelector('.quantity').value,
+                    total: parseFloat(row.querySelector('.total-cell').textContent) || 0
+                })),
+                grandTotal: grandTotal
+            };
+            
+            console.log('Processing payment:', transactionData);
+            alert(`Payment processed successfully! Total: ₹${grandTotal.toFixed(2)}`);
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('items-body').innerHTML = `
+                <tr class="item-row">
+                    <td><input type="text" class="product-id" required></td>
+                    <td class="product-name">-</td>
+                    <td class="unit-price">-</td>
+                    <td class="discount-price">-</td>
+                    <td><input type="number" class="quantity" required></td>
+                    <td class="cgst">-</td>
+                    <td class="sgst">-</td>
+                    <td class="total-cell">-</td>
+                </tr>
+            `;
+            grandTotal = 0;
+            document.getElementById('grand-total').textContent = '0.00';
+            addRowEventListeners(document.querySelector('.item-row'));
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                addNewRow();
+            }
+            if (e.key === 'F9') {
+                e.preventDefault();
+                processPayment();
+            }
+        });
+    </script>
+</body>
+</html>

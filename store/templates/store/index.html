@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supermarket POS - Home</title>
     {% load static %}
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -16,14 +14,34 @@
             padding: 0;
             background-color: #f4f4f9;
             color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-        .sidebar {
-            width: 250px;
-            height: 100vh;
-            background-color: #2c3e50;
-            color: #fff;
+        .header {
             position: fixed;
             top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff; /* White header */
+            color: #333;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .header .logo {
+            width: 40px;
+            height: auto;
+        }
+        .sidebar {
+            width: 200px; /* Reduced width */
+            height: 100vh;
+            background-color: #f1f1f1; /* Lighter shade for sidebar */
+            color: #000;
+            position: fixed;
+            top: 60px;
             left: 0;
             display: flex;
             flex-direction: column;
@@ -33,12 +51,33 @@
         .sidebar.collapsed {
             width: 60px;
         }
-        .sidebar.collapsed .menu-text,
-        .sidebar.collapsed .logo-text {
+        .sidebar .menu-text {
+            display: block;
+        }
+        .sidebar.collapsed .menu-text {
             display: none;
         }
-        .sidebar.collapsed .menu-item {
-            justify-content: center;
+        .menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+        .menu-item {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Increased gap for better alignment */
+            transition: background-color 0.3s ease;
+        }
+        .menu-item:hover {
+            background-color: #ddd;
+        }
+        .menu-item i {
+            font-size: 1.2em;
+            width: 20px; /* Fixed width for icons */
+            text-align: center; /* Center-align icons */
         }
         .sidebar.collapsed .menu-item:hover::after {
             content: attr(data-tooltip);
@@ -53,103 +92,51 @@
             white-space: nowrap;
             font-size: 0.9em;
         }
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 0;
-        }
-        .logo-full {
-            width: 80%;
-            display: block;
-            transition: opacity 0.3s ease;
-        }
-        .logo-icon {
-            width: 40px;
-            display: none;
-            transition: opacity 0.3s ease;
-        }
-        .sidebar.collapsed .logo-full {
-            display: none;
-        }
-        .sidebar.collapsed .logo-icon {
-            display: block;
-        }
-        .menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .menu-item {
-            padding: 15px 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-        }
-        .menu-item:hover {
-            background-color: #34495e;
-        }
-        .menu-item i {
-            font-size: 1.2em;
-        }
-        .menu-text {
-            font-size: 1em;
-        }
         .toggle-btn {
             position: absolute;
-            top: 20px;
-            right: -40px;
-            background-color: #2c3e50;
-            color: #fff;
+            top: 50%;
+            right: -20px;
+            background-color: #f1f1f1;
             border: none;
             padding: 10px;
             cursor: pointer;
-            border-radius: 0 5px 5px 0;
-            transition: background-color 0.3s ease;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
         }
         .toggle-btn:hover {
-            background-color: #34495e;
+            background-color: #ddd;
+        }
+        .sidebar.collapsed .toggle-btn {
+            transform: rotate(180deg);
         }
         .content {
-            margin-left: 250px;
+            margin-left: 200px; /* Adjusted for reduced sidebar */
             padding: 30px;
             background-color: #fff;
-            min-height: 100vh;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
             transition: margin-left 0.3s ease;
+            margin-top: 60px;
         }
         .content.expanded {
             margin-left: 60px;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
-        .cta-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .cta-buttons a {
-            background-color: #3498db;
-            color: #fff;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .cta-buttons a:hover {
-            background-color: #2980b9;
+        footer {
+            background-color: #fff;
+            color: #000;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: auto;
         }
         @media (max-width: 768px) {
             .sidebar {
                 width: 60px;
             }
-            .sidebar .menu-text,
-            .sidebar .logo-text {
+            .sidebar .menu-text {
                 display: none;
             }
             .content {
@@ -159,55 +146,57 @@
     </style>
 </head>
 <body>
+    <div class="header">
+        <img src="{% static 'store/POS logo Clopased.png' %}" alt="Logo" class="logo">
+    </div>
     <div class="sidebar" id="sidebar">
-        <div class="logo-container">
-            <img src="{% static 'store/POS logo Expand.png' %}" alt="Full Logo" class="logo-full">
-            <img src="{% static 'store/POS logo Clopased.png' %}" alt="Icon Logo" class="logo-icon">
-        </div>
         <ul class="menu">
             <li class="menu-item" data-tooltip="Material Inward">
-                <a href="{% url 'material_inward:material_inward' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
+                <a href="{% url 'material_inward:material_inward' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
                     <i class="fas fa-truck-moving"></i>
                     <span class="menu-text">Material Inward</span>
                 </a>
             </li>
-             <li class="menu-item" data-tooltip="Put Away">
-                <a href="{% url 'putaway_home' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
+            <li class="menu-item" data-tooltip="Put Away">
+                <a href="{% url 'putaway_home' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
                     <i class="fas fa-archive"></i>
                     <span class="menu-text">Put Away</span>
                 </a>
-            </li>            
-            <li class="menu-item" data-tooltip="Stacking in Rack">
-                <i class="fas fa-pallet"></i>
-                <span class="menu-text">Stacking in Rack</span>
+            </li>
+            <li class="menu-item" data-tooltip="Rack Replenishment">
+                <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-boxes"></i> <!-- Updated icon for rack replenishment -->
+                    <span class="menu-text">Rack Replenishment</span>
+                </a>
             </li>
             <li class="menu-item" data-tooltip="Billing">
-                <i class="fas fa-cash-register"></i>
-                <span class="menu-text">Billing</span>
+                <a href="{% url 'billing_home' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <i class="fas fa-cash-register"></i>
+                    <span class="menu-text">Billing</span>
+                </a>
             </li>
             <li class="menu-item" data-tooltip="PO Creation">
-                <i class="fas fa-file-invoice"></i>
-                <span class="menu-text">PO Creation</span>
+                <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-file-invoice"></i>
+                    <span class="menu-text">PO Creation</span>
+                </a>
             </li>
         </ul>
         <button class="toggle-btn" id="toggle-btn">
-            <i class="fas fa-bars"></i>
+            <i class="fas fa-chevron-left"></i>
         </button>
     </div>
     <div class="content" id="content">
-        <h1>Welcome to the Supermarket Management System</h1>
-        <p>Efficiently manage your supermarket operations with our POS system. Streamline material inward, putaway, billing, and more.</p>
-        <div class="cta-buttons">
-            <a href="{% url 'material_inward:material_inward' %}">Start Material Inward</a>
-            <a href="#">Create Purchase Order</a>
-        </div>
+        <h1>Welcome to Supermarket Management</h1>
+        <p>Manage your operations efficiently.</p>
     </div>
-
+    <footer>
+        &copy; 2023 New Era Software Solutions. All rights reserved.
+    </footer>
     <script>
         const sidebar = document.getElementById('sidebar');
         const content = document.getElementById('content');
         const toggleBtn = document.getElementById('toggle-btn');
-
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
             content.classList.toggle('expanded');
