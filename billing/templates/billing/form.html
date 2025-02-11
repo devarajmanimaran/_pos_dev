@@ -4,295 +4,929 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS Billing System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #475569;
+            --success-color: #16a34a;
+            --light-gray: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-color-dark: #1e293b;
+            --text-color-light: #ffffff;
+            --font-family-base: 'Inter', sans-serif;
+            --sidebar-width: 350px;
+            --segment-bg: var(--light-gray);
+            --segment-selected: var(--primary-color);
+            --segment-hover: #e2e8f0;
         }
 
         body {
-            background: #f0f2f5;
+            font-family: var(--font-family-base);
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
+            display: flex;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
+        .main-layout {
+            display: flex;
+            width: 100%;
+            padding: 100px;
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+        }
+
+        .customer-details {
+            background-color: var(--text-color-light);
+            padding: 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+            overflow: hidden;
+        }
+
+        .customer-details input {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: white;
+        }
+
+        .customer-container {
+            padding: 1.5rem;
+            background-color: var(--text-color-light);
+            margin-top: 0;
+        }
+
+        .segment-control {
+            display: flex;
+            background-color: var(--segment-bg);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .segment-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            color: var(--text-color-dark);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .segment-btn:hover {
+            background-color: var(--segment-hover);
+        }
+
+        .segment-btn.active {
+            background-color: var(--segment-selected);
+            color: var(--text-color-light);
+        }
+
+        .customer-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .customer-details .form-group {
+            margin-bottom: 0;
+            width: 100%;
+            padding: 0;
+        }
+
+        .customer-details .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .customer-details .form-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background-color: white;
+        }
+
+        .customer-details h2 {
+            color: var(--text-color-light);
+            margin: 0;
+            padding: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            border-bottom: none;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .billing-container {
+            background-color: var(--text-color-light);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color-dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-color-dark);
+            transition: all 0.3s ease;
+            background-color: var(--light-white);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background-color: white;
+        }
+
+        .form-group input::placeholder {
+            color: var(--secondary-color);
+            opacity: 0.7;
         }
 
         .header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px 8px 0 0;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .total-display {
-            font-size: 1.5rem;
-            font-weight: bold;
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
         }
 
-        .billing-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        .total-container {
+            display: flex;
+            align-items: baseline;
+            gap: 24px;
+        }
+
+        .total-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color-light);
+        }
+
+        .total-label {
+            font-weight: 500;
+            margin-right: 5px;
+            opacity: 0.9;
         }
 
         .table-container {
-            max-height: 60vh;
-            overflow-y: auto;
+            overflow-x: auto;
+            padding: 0 1.5rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
+            margin: 1rem 0;
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 14px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
         }
 
         th {
-            background: #3498db;
-            color: white;
-            position: sticky;
-            top: 0;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            font-weight: 600;
+            white-space: nowrap;
         }
 
-        tr:hover {
-            background-color: #f5f5f5;
+        tbody tr:hover {
+            background-color: var(--light-gray);
         }
 
-        input {
+        .serial-no {
+            width: 5%;
+            text-align: center;
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+
+        .table-container input[type="text"],
+        .table-container input[type="number"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: var(--text-color-dark);
+            transition: all 0.3s ease;
         }
 
-        input:focus {
+        .table-container input[type="text"]:focus,
+        .table-container input[type="number"]:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .footer-actions {
-            padding: 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #ddd;
-            border-radius: 0 0 8px 8px;
+            padding: 20px 1.5rem;
+            background-color: var(--light-gray);
+            border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 10px;
             justify-content: flex-end;
+            gap: 16px;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
 
         .btn-primary {
-            background: #3498db;
-            color: white;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
         }
 
         .btn-primary:hover {
-            background: #2980b9;
+            background-color: #1d4ed8;
         }
 
         .btn-success {
-            background: #27ae60;
-            color: white;
+            background-color: var(--success-color);
+            color: var(--text-color-light);
         }
 
         .btn-success:hover {
-            background: #219a52;
+            background-color: #15803d;
         }
 
         .total-cell {
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-color-dark);
+        }
+
+        .no-spinners {
+            -moz-appearance: textfield;
+        }
+
+        .no-spinners::-webkit-outer-spin-button,
+        .no-spinners::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .customer-details {
+                position: static;
+            }
+        }
+
+        .customer-actions {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-save-customer {
+            display: none; /* Hidden by default */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="billing-container">
-            <div class="header">
-                <h1>POS System</h1>
-                <div class="total-display">
-                    Total: ₹<span id="grand-total">0.00</span>
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div class="customer-details">
+                <h2>Customer Information</h2>
+                <div class="customer-container">
+                    <div class="segment-control">
+                        <button type="button" class="segment-btn active" data-type="new">New</button>
+                        <button type="button" class="segment-btn" data-type="existing">Existing</button>
+                        <button type="button" class="segment-btn" data-type="generic">Generic</button>
+                    </div>
+                    <div class="customer-input-group">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" name="customerName" placeholder="Enter customer name">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">Phone Number</label>
+                            <input type="text" id="customerPhone" name="customerPhone" placeholder="Enter phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerAddress1">Address Line 1</label>
+                            <input type="text" id="customerAddress1" name="customerAddress1" placeholder="Enter address line 1">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerAddress2">Address Line 2</label>
+                            <input type="text" id="customerAddress2" name="customerAddress2" placeholder="Enter address line 2">
+                        </div>
+                    </div>
+                    <div class="customer-actions">
+                        <button type="button" class="btn btn-primary btn-save-customer" onclick="saveCustomer()">
+                            Save Customer
+                        </button>
+                    </div>
                 </div>
             </div>
+        </aside>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%">Product ID</th>
-                            <th style="width: 25%">Product Name</th>
-                            <th style="width: 10%">Unit Price</th>
-                            <th style="width: 10%">Discount</th>
-                            <th style="width: 8%">Qty</th>
-                            <th style="width: 8%">CGST</th>
-                            <th style="width: 8%">SGST</th>
-                            <th style="width: 12%">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="items-body">
-                        <tr class="item-row">
-                            <td><input type="text" class="product-id" required></td>
-                            <td class="product-name"></td>
-                            <td class="unit-price"></td>
-                            <td class="discount-price"></td>
-                            <td><input type="number" class="quantity" required></td>
-                            <td class="cgst"></td>
-                            <td class="sgst"></td>
-                            <td class="total-cell"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <main class="main-content">
+            <div class="billing-container">
+                <div class="header">
+                    <h1>Billing</h1>
+                    <div class="total-container">
+                        <div>
+                            <span class="total-label">Items:</span>
+                            <span id="total-quantity-count" class="total-display">0</span>
+                        </div>
+                        <div>
+                            <span class="total-label">Total: ₹</span>
+                            <span id="grand-total" class="total-display">0.00</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="footer-actions">
-                <button type="button" class="btn btn-primary" onclick="addNewRow()">Add Item (F2)</button>
-                <button type="button" class="btn btn-success" onclick="processPayment()">Process Payment (F9)</button>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%">S.No</th>
+                                <th style="width: 12%">Product ID</th>
+                                <th style="width: 25%">Product Name</th>
+                                <th style="width: 10%">Unit Price</th>
+                                <th style="width: 10%">Discount Price</th>
+                                <th style="width: 8%">Qty</th>
+                                <th style="width: 8%">CGST</th>
+                                <th style="width: 8%">SGST</th>
+                                <th style="width: 14%">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-body">
+                            <tr class="item-row">
+                                <td class="serial-no">1</td>
+                                <td><input type="text" class="product-id" required></td>
+                                <td class="product-name"></td>
+                                <td class="unit-price"></td>
+                                <td class="discount-price"></td>
+                                <td><input type="number" class="quantity no-spinners" value="1" required></td>
+                                <td class="cgst"></td>
+                                <td class="sgst"></td>
+                                <td class="total-cell">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-primary" onclick="addNewRow()">Add Item (F2)</button>
+                    <button type="button" class="btn btn-success" onclick="processPayment()">Process Payment (F9)</button>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        let grandTotal = 0;
+        // Customer type selection handling
+        let currentCustomerType = 'new';
         
+        // Show save button initially since default is 'new'
+        document.addEventListener('DOMContentLoaded', () => {
+            const saveButton = document.querySelector('.btn-save-customer');
+            saveButton.style.display = 'block';
+            addRowEventListeners(document.querySelector('.item-row'));
+            updateTotalQuantityDisplay();
+        });
+
+        document.querySelectorAll('.segment-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                currentCustomerType = button.dataset.type;
+                handleCustomerTypeChange(currentCustomerType);
+            });
+        });
+
+        function handleCustomerTypeChange(type) {
+            clearCustomerFields();
+            // Remove previous event listeners
+            const phoneInput = document.getElementById('customerPhone');
+            phoneInput.removeEventListener('blur', fetchCustomerDetails);
+            
+            const saveButton = document.querySelector('.btn-save-customer');
+            
+            switch(type) {
+                case 'new':
+                    enableCustomerFields(true);
+                    saveButton.style.display = 'block';
+                    window.currentCustomerId = null;  // Reset customer ID
+                    break;
+                case 'existing':
+                    enableCustomerFields(true);
+                    phoneInput.addEventListener('blur', fetchCustomerDetails);
+                    saveButton.style.display = 'none';
+                    window.currentCustomerId = null;  // Reset customer ID
+                    break;
+                case 'generic':
+                    enableCustomerFields(false);
+                    setGenericCustomer();
+                    saveButton.style.display = 'none';
+                    window.currentCustomerId = 'GENERIC001';  // Set generic customer ID
+                    break;
+            }
+        }
+
+        async function fetchCustomerDetails() {
+            const phone = document.getElementById('customerPhone').value;
+            if (!phone) {
+                alert('Please enter a phone number');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('phone', phone);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                const response = await fetch("{% url 'get_customer' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.found) {
+                    window.currentCustomerId = data.customer.customer_id;  // Add this line
+                    document.getElementById('customerName').value = data.customer.name;
+                    document.getElementById('customerAddress1').value = data.customer.address1;
+                    document.getElementById('customerAddress2').value = data.customer.address2;
+                } else {
+                    alert(data.error || 'Customer not found with this phone number.');
+                    if (currentCustomerType === 'existing') {
+                        clearCustomerFields();
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to fetch customer details: ' + error.message);
+            }
+        }
+
+        async function saveCustomer() {
+            const customerData = {
+                name: document.getElementById('customerName').value.trim(),
+                phone: document.getElementById('customerPhone').value.trim(),
+                address1: document.getElementById('customerAddress1').value.trim(),
+                address2: document.getElementById('customerAddress2').value.trim()
+            };
+
+            if (!customerData.name || !customerData.phone) {
+                alert('Customer name and phone are required.');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                Object.keys(customerData).forEach(key => {
+                    formData.append(key, customerData[key]);
+                });
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                const response = await fetch("{% url 'save_customer' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to save customer');
+                }
+                
+                window.currentCustomerId = data.customer_id;  // Add this line
+                alert('Customer saved successfully!');
+                const saveButton = document.querySelector('.btn-save-customer');
+                saveButton.style.display = 'none'; // Hide save button after successful save
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save customer: ' + error.message);
+            }
+        }
+
+        async function saveCustomerIfNeeded() {
+            if (currentCustomerType === 'new') {
+                const customerData = {
+                    name: document.getElementById('customerName').value.trim(),
+                    phone: document.getElementById('customerPhone').value.trim(),
+                    address1: document.getElementById('customerAddress1').value.trim(),
+                    address2: document.getElementById('customerAddress2').value.trim()
+                };
+
+                if (!customerData.name || !customerData.phone) {
+                    alert('Customer name and phone are required for new customers.');
+                    return false;
+                }
+
+                try {
+                    const formData = new FormData();
+                    Object.keys(customerData).forEach(key => {
+                        formData.append(key, customerData[key]);
+                    });
+                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                    const response = await fetch("{% url 'save_customer' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to save customer');
+                    }
+                    
+                    console.log('Customer saved successfully');
+                    return true;
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to save customer: ' + error.message);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function processPayment() {
+            if (currentCustomerType === 'new') {
+                const saveButton = document.querySelector('.btn-save-customer');
+                if (saveButton.style.display === 'block') {
+                    alert('Please save customer information first');
+                    return;
+                }
+            }
+
+            if (!window.currentCustomerId) {
+                alert('Please select or save a customer first');
+                return;
+            }
+
+            const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                productId: row.querySelector('.product-id').value,
+                quantity: row.querySelector('.quantity').value,
+                unitPrice: parseFloat(row.querySelector('.unit-price').textContent),
+                discountPrice: parseFloat(row.querySelector('.discount-price').textContent),
+                cgst: parseFloat(row.querySelector('.cgst').textContent),
+                sgst: parseFloat(row.querySelector('.sgst').textContent),
+                total: parseFloat(row.querySelector('.total-cell').textContent) || 0
+            })).filter(item => item.productId && item.quantity > 0);
+
+            if (items.length === 0) {
+                alert('No valid items in bill');
+                return;
+            }
+
+            try {
+                const response = await fetch("{% url 'save_bill' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        items,
+                        customer_id: window.currentCustomerId || 'GENERIC001',
+                        grandTotal,
+                        totalQuantity
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Bill saved successfully!\nBill No: ${data.bill_no}\nTotal: ₹${grandTotal.toFixed(2)}`);
+                    resetForm();
+                } else {
+                    throw new Error(data.error || 'Failed to save bill');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to process payment: ' + error.message);
+            }
+        }
+
+        function setGenericCustomer() {
+            const fields = ['customerName', 'customerPhone', 'customerAddress1', 'customerAddress2'];
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.value = 'Generic Customer';
+                field.disabled = true;
+            });
+            window.currentCustomerId = 'GENERIC001';  // Set generic customer ID
+        }
+
+        function clearCustomerFields() {
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('customerAddress1').value = '';
+            document.getElementById('customerAddress2').value = '';
+            window.currentCustomerId = null;  // Reset customer ID when clearing fields
+        }
+
+        function enableCustomerFields(enabled) {
+            const fields = ['customerName', 'customerPhone', 'customerAddress1', 'customerAddress2'];
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.disabled = !enabled;
+                if (!enabled) {
+                    field.value = 'Generic Customer';
+                }
+            });
+        }
+        
+        let grandTotal = 0;
+        let totalQuantity = 0;
+
         document.addEventListener('DOMContentLoaded', () => {
             addRowEventListeners(document.querySelector('.item-row'));
+            updateTotalQuantityDisplay();
         });
 
         function addNewRow() {
             const tbody = document.getElementById('items-body');
-            const newRow = document.querySelector('.item-row').cloneNode(true);
-            newRow.querySelectorAll('input').forEach(input => input.value = '');
-            newRow.querySelectorAll('td:not(:first-child):not(:nth-child(5))').forEach(td => td.textContent = '');
+            const newRow = createNewRow(tbody.children.length + 1);
             tbody.appendChild(newRow);
             addRowEventListeners(newRow);
+            updateSerialNumbers(); // Update serial numbers after adding row
             newRow.querySelector('.product-id').focus();
         }
 
+        function createNewRow(serialNumber) {
+            const tr = document.createElement('tr');
+            tr.className = 'item-row';
+            tr.innerHTML = `
+                <td class="serial-no">${serialNumber}</td>
+                <td><input type="text" class="product-id" required></td>
+                <td class="product-name"></td>
+                <td class="unit-price"></td>
+                <td class="discount-price"></td>
+                <td><input type="number" class="quantity no-spinners" value="1" required></td>
+                <td class="cgst"></td>
+                <td class="sgst"></td>
+                <td class="total-cell">0.00</td> `;
+            return tr;
+        }
+
+        function updateSerialNumbers() {
+            const rows = document.querySelectorAll('.item-row');
+            rows.forEach((row, index) => {
+                row.querySelector('.serial-no').textContent = index + 1;
+            });
+        }
+
         function addRowEventListeners(row) {
-            row.querySelector('.product-id').addEventListener('keydown', handleProductIdEnter);
-            row.querySelector('.quantity').addEventListener('keydown', handleQuantityEnter);
+            const productIdInput = row.querySelector('.product-id');
+            const quantityInput = row.querySelector('.quantity');
+
+            productIdInput.addEventListener('keydown', handleProductIdEnter);
+            quantityInput.addEventListener('keydown', handleQuantityEnter);
+            quantityInput.addEventListener('change', function() {
+                recalculateRow.call(this);
+            });
+
+            productIdInput.addEventListener('blur', function() {
+                recalculateRow.call(this);
+            });
+            quantityInput.addEventListener('blur', function() {
+                recalculateRow.call(this);
+            });
         }
 
         function handleProductIdEnter(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                event.target.closest('tr').querySelector('.quantity').focus();
+                const row = event.target.closest('tr');
+                row.querySelector('.quantity').focus();
+                recalculateRow.call(event.target);
             }
         }
 
-        async function handleQuantityEnter(event) {
+        function handleQuantityEnter(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                const row = event.target.closest('tr');
-                const productId = row.querySelector('.product-id').value;
-                const quantity = row.querySelector('.quantity').value;
+                recalculateRow.call(event.target);
+                addNewRow();
+            }
+        }
 
-                if (!productId || !quantity) {
-                    alert('Please fill both Product ID and Quantity');
+        async function recalculateRow() {
+            const row = this.closest('tr');
+            const productIdInput = row.querySelector('.product-id');
+            const quantityInput = row.querySelector('.quantity');
+            const productId = productIdInput.value;
+            const quantity = quantityInput.value;
+            const productNameCell = row.querySelector('.product-name');
+            const unitPriceCell = row.querySelector('.unit-price');
+            const discountPriceCell = row.querySelector('.discount-price');
+            const cgstCell = row.querySelector('.cgst');
+            const sgstCell = row.querySelector('.sgst');
+            const totalCell = row.querySelector('.total-cell');
+
+            if (!productId || !quantity) {
+                productNameCell.textContent = '';
+                unitPriceCell.textContent = '';
+                discountPriceCell.textContent = '';
+                cgstCell.textContent = '';
+                sgstCell.textContent = '';
+                totalCell.textContent = '0.00';
+                calculateGrandTotal();
+                updateTotalQuantityDisplay();
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('product_id', productId);
+                formData.append('qty', quantity);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                const response = await fetch("{% url 'bill_value' %}", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        alert(`Product ID "${productId}" not found.`);
+                        productIdInput.value = ''; // Clear the product ID input here
+                        productIdInput.focus(); // Keep focus on the product ID input for correction
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                    productNameCell.textContent = '';
+                    unitPriceCell.textContent = '';
+                    discountPriceCell.textContent = '';
+                    cgstCell.textContent = '';
+                    sgstCell.textContent = '';
+                    totalCell.textContent = '0.00';
+                    calculateGrandTotal();
+                    updateTotalQuantityDisplay();
                     return;
                 }
 
-                try {
-                    const formData = new FormData();
-                    formData.append('product_id', productId);
-                    formData.append('qty', quantity);
-                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                const data = await response.json();
 
-                    const response = await fetch("{% url 'bill_value' %}", {
-                        method: "POST",
-                        body: formData,
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}",
-                        },
-                    });
-
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-
-                    // Update row with received data
-                    row.querySelector('.product-name').textContent = data.Product_Name;
-                    row.querySelector('.unit-price').textContent = data.Unit_Price;
-                    row.querySelector('.discount-price').textContent = data.Discount_Price;
-                    row.querySelector('.cgst').textContent = data.CGST;
-                    row.querySelector('.sgst').textContent = data.SGST;
-                    row.querySelector('.total-cell').textContent = data.Total.toFixed(2);
-
-                    // Update grand total
-                    grandTotal += data.Total;
-                    document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
-
-                    // Add new row and focus
-                    addNewRow();
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Failed to process item. Please check inputs and try again.');
+                if (data.error) {
+                    alert(data.error);
+                    productNameCell.textContent = '';
+                    unitPriceCell.textContent = '';
+                    discountPriceCell.textContent = '';
+                    cgstCell.textContent = '';
+                    sgstCell.textContent = '';
+                    totalCell.textContent = '0.00';
+                } else {
+                    productNameCell.textContent = data.Product_Name;
+                    unitPriceCell.textContent = data.Unit_Price;
+                    discountPriceCell.textContent = data.Discount_Price;
+                    cgstCell.textContent = data.CGST;
+                    sgstCell.textContent = data.SGST;
+                    totalCell.textContent = data.Total.toFixed(2);
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to process item. Please check inputs and try again.');
+                productNameCell.textContent = '';
+                unitPriceCell.textContent = '-';
+                discountPriceCell.textContent = '';
+                cgstCell.textContent = '';
+                sgstCell.textContent = '';
+                totalCell.textContent = '0.00';
+            } finally {
+                calculateGrandTotal();
+                updateTotalQuantityDisplay();
             }
         }
+        function calculateGrandTotal() {
+            grandTotal = Array.from(document.querySelectorAll('#items-body .item-row')).reduce((sum, row) => {
+                const totalText = row.querySelector('.total-cell').textContent;
+                return sum + parseFloat(totalText || 0); // Use parseFloat with default 0 to handle cases where totalText is null/undefined/empty string
+            }, 0);
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+        }
 
-        function processPayment() {
-            // Implement payment processing logic here
-            const transactionData = {
-                items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
-                    productId: row.querySelector('.product-id').value,
-                    quantity: row.querySelector('.quantity').value,
-                    total: parseFloat(row.querySelector('.total-cell').textContent) || 0
-                })),
-                grandTotal: grandTotal
-            };
-            
-            console.log('Processing payment:', transactionData);
-            alert(`Payment processed successfully! Total: ₹${grandTotal.toFixed(2)}`);
-            resetForm();
+
+        function updateTotalQuantityDisplay() {
+            totalQuantity = Array.from(document.querySelectorAll('#items-body .item-row')).reduce((sum, row) => {
+                const qty = parseInt(row.querySelector('.quantity').value) || 0;
+                return sum + qty;
+            }, 0);
+            document.getElementById('total-quantity-count').textContent = totalQuantity;
         }
 
         function resetForm() {
-            document.getElementById('items-body').innerHTML = `
-                <tr class="item-row">
-                    <td><input type="text" class="product-id" required></td>
-                    <td class="product-name">-</td>
-                    <td class="unit-price">-</td>
-                    <td class="discount-price">-</td>
-                    <td><input type="number" class="quantity" required></td>
-                    <td class="cgst">-</td>
-                    <td class="sgst">-</td>
-                    <td class="total-cell">-</td>
-                </tr>
-            `;
+            const tbody = document.getElementById('items-body');
+            tbody.innerHTML = '';
+            const newRow = createNewRow(1);
+            tbody.appendChild(newRow);
+            addRowEventListeners(newRow);
+            updateSerialNumbers();
+
             grandTotal = 0;
+            totalQuantity = 0;
             document.getElementById('grand-total').textContent = '0.00';
-            addRowEventListeners(document.querySelector('.item-row'));
+            document.getElementById('total-quantity-count').textContent = '0';
+
+            // Clear customer information
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('customerAddress1').value = '';
+            document.getElementById('customerAddress2').value = '';
         }
 
         // Keyboard shortcuts

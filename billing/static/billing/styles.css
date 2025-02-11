@@ -1,0 +1,49 @@
+/* General Styles */
+.sidebar {
+    width: 200px;
+    background-color: #f8f9fa; /* Sidebar background */
+    padding: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.sidebar .menu-item {
+    padding: 10px;
+    cursor: pointer;
+    list-style: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.sidebar .menu-item:hover {
+    background-color: #e2e6ea; /* Light gray hover effect */
+    color: #000; /* Black text on hover */
+}
+
+.sidebar .submenu {
+    margin-left: 20px; /* Indentation for submenus */
+    display: none; /* Hide submenus by default */
+}
+
+.sidebar .menu-item:hover + .submenu,
+.sidebar .submenu:hover {
+    display: block; /* Show submenu when hovered */
+}
+
+.sidebar .submenu-item {
+    padding: 8px;
+    list-style: none;
+    cursor: pointer;
+    color: #555; /* Darker text for submenus */
+}
+
+.sidebar .submenu-item:hover {
+    background-color: #007bff; /* Highlighted submenu */
+    color: #fff; /* White text for highlighted submenu */
+    border-radius: 4px; /* Optional rounded corners for hover effect */
+}
+
+.submenu-item:hover {
+    background-color: #007bff;
+    color: #fff;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
