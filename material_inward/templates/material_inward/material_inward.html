@@ -1,114 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inbound Check</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-4">
-        <h1>Inbound Check</h1>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>PO Number</th>
-                    <th>Created Date</th>
-                    <th>Status</th>
-                    <th>Supplier ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in data %}
-                <tr>
-                    <td>
-                        <a href="#" class="po-link" data-po-id="{{ row.PO_NO }}">{{ row.PO_NO }}</a>
-                    </td>
-                    <td>{{ row.CREATED_DATE }}</td>
-                    <td>{{ row.STATUS }}</td>
-                    <td>{{ row.SUPPLIER_ID }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+{% extends 'base.html' %}
 
-    <div class="modal fade" id="poDetailsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">PO Order Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="poDetailsContent">
-                    <!-- PO details will be loaded here dynamically -->
-                </div>
-            </div>
-        </div>
-    </div>
+{% block content %}
+<style>
+	.container {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start; /* Align content to the left */
+		width: 100%;
+		max-width: 1200px;
+		margin-left: 200px; /* Adjusted for sidebar */
+		padding: 10px;
+		transition: margin-left 0.3s ease;
+	}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".po-link").forEach(link => {
-                link.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    let poId = this.getAttribute("data-po-id");
-                    
-                    fetch(`/material-inward/po-details/${poId}/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                alert("Error fetching PO details.");
-                                return;
-                            }
-                            
-                            let detailsHtml = "";
-                            data.forEach(item => {
-                                detailsHtml += `
-                                    <div class="card mb-2">
-                                        <div class="card-header">
-                                            <strong>Line ID: </strong> ${item.po_line_id} <strong> Product Name: </strong> ${item.product_name} <strong> Ordered Qty: </strong> ${item.quantity_ordered} ${item.uom}
-                                            <button class="btn btn-sm btn-primary float-end toggle-details">Expand</button>
-                                        </div>
-                                        <div class="card-body d-none">
-                                            <form>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Quantity Received</label>
-                                                    <input type="number" class="form-control" value="${item.quantity_received}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Quantity Accepted</label>
-                                                    <input type="number" class="form-control" value="${item.quantity_accepted}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Quantity Rejected</label>
-                                                    <input type="number" class="form-control" value="${item.quantity_rejected}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Rejection Reason</label>
-                                                    <textarea class="form-control">${item.rejection_reason}</textarea>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                            
-                            document.getElementById("poDetailsContent").innerHTML = detailsHtml;
-                            
-                            document.querySelectorAll(".toggle-details").forEach(button => {
-                                button.addEventListener("click", function () {
-                                    this.closest(".card").querySelector(".card-body").classList.toggle("d-none");
-                                });
-                            });
-                            
-                            new bootstrap.Modal(document.getElementById("poDetailsModal")).show();
-                        })
-                        .catch(error => console.error("Error:", error));
-                });
-            });
+	.container h1 {
+		margin-bottom: 10px; /* Reduce spacing between heading and table */
+	}
+
+	.content {
+		margin-top: 60px; /* Ensure space below the fixed header */
+	}
+	.container.expanded {
+		margin-left: 60px; /* Adjusted for collapsed sidebar */
+	}
+	.table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 10px 0; /* Reduced margin */
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	}
+	.table th, .table td {
+		padding: 12px 15px;
+		text-align: left;
+		border-bottom: 1px solid #ddd;
+	}
+	.table th {
+		background-color: #f8f9fa;
+		font-weight: 500;
+	}
+	.table tbody tr:hover {
+		background-color: #f1f1f1;
+	}
+</style>
+	<div class="container" id="container">
+		<h1>Inbound Check</h1>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>PO Number</th>
+					<th>Created Date</th>
+					<th>Status</th>
+					<th>Supplier ID</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in data %}
+				<tr>
+					<td>
+						<a href="{% url 'material_inward:po-details' row.PO_NO %}" class="po-link">{{ row.PO_NO }}</a>
+					</td>
+					<td>{{ row.CREATED_DATE }}</td>
+					<td>{{ row.STATUS }}</td>
+					<td>{{ row.SUPPLIER_ID }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<script>
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const toggleBtn = document.getElementById('toggle-btn');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('expanded');
         });
-    </script>
-</body>
-</html>
+	window.addEventListener("pageshow", function (event) {
+		if (event.persisted) {
+			location.reload(); // Forces reload when navigating back
+		}
+	});
+	</script>
+{% endblock %}

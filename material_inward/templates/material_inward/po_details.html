@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block content %}
+		<style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Align content to the left */
+            width: 100%;
+            max-width: 1200px;
+            margin-left: 200px; /* Adjusted for sidebar */
+            padding: 10px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .container h1 {
+            margin-bottom: 10px; /* Reduce spacing between heading and table */
+        }
+
+        .content {
+            margin-top: 60px; /* Ensure space below the fixed header */
+        }
+        .container.expanded {
+            margin-left: 60px; /* Adjusted for collapsed sidebar */
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0; /* Reduced margin */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .table th, .table td {
+            padding: 20px 55px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        .table tbody tr:hover {
+            background-color: #e0e0e0; /* Highlight row on hover */
+        }
+        .expandable-row {
+            display: none; /* Hide expanded rows by default */
+        }
+        .expandable-row.show {
+            display: table-row; /* Show expanded rows when 'show' class is added */
+        }
+        .collapsible {
+            cursor: pointer;
+        }
+        .priority-warning {
+            color: red;
+            font-size: 14px;
+            display: none;
+        }
+        .scrollable-table {
+            max-height: 60vh;
+            overflow-y: auto;
+            display: block;
+        }
+        .table tbody tr:nth-child(odd) {
+            background-color: #f1f1f1;
+        }
+        .expanded-row {
+            display: flex;
+            justify-content: center; /* Center input boxes horizontally */
+            gap: 10px; /* Add spacing between input boxes */
+            padding: 10px;
+        }
+        .expanded-row input, .expanded-row select {
+            width: 150px; /* Adjust width of input boxes */
+        }
+        /* Highlight individual input fields on hover */
+        .btn-ok:hover {
+            background-color: #abb5e0 !important; /* Darker green */
+            color: white !important;
+        }
+        .collapsible:hover {
+            background-color: #abb5e0 !important;
+            color: white !important;
+        }
+        .search-filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        #search-box {
+            width: 250px;
+        }
+
+        .filter-dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .show-dropdown {
+            display: block;
+        }
+		</style>
+        <div class="container" id="container">
+            <h1>PO Order Details</h1>
+            <div class="scrollable-table">
+            <div class="search-filter-container">
+                <input type="text" id="search-box" placeholder="Search Line ID or Product Name" class="form-control">
+                
+                <div class="filter-dropdown">
+                    <button id="filter-btn" class="btn btn-light">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <div id="filter-menu" class="dropdown-content">
+                        <label>Status:</label>
+                        <select id="status-filter" class="form-control">
+                            <option value="all">All</option>
+                            <option value="Open">Open</option>
+                            <option value="Received">Received</option>
+                            <option value="Pending for approval">Pending for approval</option>
+                            <option value="Partially Received">Partially Received</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <button id="apply-filter" class="btn btn-primary btn-sm mt-2">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table remains unchanged -->
+            <table class="table" id="po-table">
+                <thead>
+                    <tr class="table-header">
+                        <th>Line Id</th>
+                        <th>Product</th>
+                        <th>Order Qty</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order_line in order_lines %}
+                    <tr class="po-row" data-status="{{ order_line.status }}">
+                        <td>{{ order_line.po_line_id }}</td>
+                        <td>{{ order_line.product_name }}</td>
+                        <td>{{ order_line.quantity_ordered }}</td>
+                        <td>{{ order_line.status }}</td>
+                        <td><button class="btn btn-sm btn-outline-primary collapsible">▼</button></td>
+                    </tr>
+                    <tr class="expandable-row">
+                        <td colspan="5">
+                            <div class="expanded-row">
+                                <label>Invoice Qty:</label>
+                                <input type="number" class="form-control invoice-qty" value="{{ order_line.quantity_invoice }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                                <label>Received Qty:</label>
+                                <input type="number" class="form-control received-qty" value="{{ order_line.quantity_received }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                                <label>Accepted Qty:</label>
+                                <input type="number" class="form-control accepted-qty" value="{{ order_line.quantity_accepted }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                                <label>Rejected Qty:</label>
+                                <input type="number" class="form-control rejected-qty" value="{{ order_line.quantity_rejected }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                                <label>Priority:</label>
+                                <select class="form-control priority-select" {% if order_line.status != 'Open' %}disabled{% endif %}>
+                                    <option value="">Select</option>
+                                    <option value="Critical" {% if order_line.priority == "Critical" %}selected{% endif %}>Critical</option>
+                                    <option value="Non Critical" {% if order_line.priority == "Non Critical" %}selected{% endif %}>Non Critical</option>
+                                    <option value="Excess" {% if order_line.priority == "Excess" %}selected{% endif %}>Excess</option>
+                                    <option value="Shortage" {% if order_line.priority == "Shortage" %}selected{% endif %}>Shortage</option>
+                                </select>
+                                <button class="btn btn-success btn-ok" {% if order_line.status != 'Open' %}disabled{% endif %}>OK</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>    
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const container = document.getElementById('container');
+        const toggleBtn = document.getElementById('toggle-btn');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('expanded');
+            container.classList.toggle('expanded'); // Toggle container margin
+        });
+
+        // Expand/Collapse Functionality
+        document.querySelectorAll('.collapsible').forEach(button => {
+            button.addEventListener('click', () => {
+                const row = button.closest('tr').nextElementSibling;
+                row.classList.toggle('show');
+            });
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $(".btn-ok").click(function() {
+                let row = $(this).closest("tr").prev();
+                let inputs = row.next().find("input, select");
+                let allFilled = true;
+
+                inputs.each(function() {
+                    if ($(this).val() === "") {
+                        allFilled = false;
+                        return false; // Break out of the loop
+                    }
+                });
+
+                if (!allFilled) {
+                    alert("Please fill all the values.");
+                    return;
+                }
+
+                let poNumber = "{{ po_number }}";  // Ensure this value is passed from Django
+                let poLineId = row.find("input").eq(0).val();
+                let quantityInvoice = parseInt(row.next().find(".invoice-qty").val());
+                let quantityReceived = parseInt(row.next().find(".received-qty").val());
+                let quantityAccepted = parseInt(row.next().find(".accepted-qty").val());
+                let quantityRejected = parseInt(row.next().find(".rejected-qty").val());
+                let priority = row.next().find(".priority-select").val();
+                let notes = row.next().find("input").eq(5).val() || 'None';  // Fixed Notes selector
+
+                // Check for quantity mismatch
+                if (quantityInvoice !== quantityReceived) {
+                    if (priority !== "Critical" && priority !== "Non Critical") {
+                        alert("Quantity mismatch detected. Please select either 'Critical' or 'Non Critical' in the priority field.");
+                        return;
+                    }
+                }
+
+                $.ajax({
+                    url: "{% url 'material_inward:process-po-receipt' %}",
+                    method: "POST",
+                    data: {
+                        po_number: poNumber,
+                        po_line_id: poLineId,
+                        quantity_invoice: quantityInvoice,
+                        quantity_received: quantityReceived,
+                        quantity_accepted: quantityAccepted,
+                        quantity_rejected: quantityRejected,
+                        rejection_reason: notes,
+                        priority: priority,
+                        csrfmiddlewaretoken: "{{ csrf_token }}"
+                    },
+                    beforeSend: function(xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("PO receipt processed successfully!");
+                            // Update the input fields with the entered values and make them uneditable
+                            row.next().find(".invoice-qty").prop("readonly", true).val(quantityInvoice);
+                            row.next().find(".received-qty").prop("readonly", true).val(quantityReceived);
+                            row.next().find(".accepted-qty").prop("readonly", true).val(quantityAccepted);
+                            row.next().find(".rejected-qty").prop("readonly", true).val(quantityRejected);
+                            row.next().find(".priority-select").prop("disabled", true).val(priority);
+                            row.next().find("input").eq(5).prop("readonly", true).val(notes);
+                            // Update the status field
+                            row.find("input").eq(3).val(response.new_status);
+                            // Refresh the page after alert is closed
+                            location.reload();
+                        } else {
+                            alert("Error: " + response.error);
+                        }
+                    },
+                    error: function(xhr) {
+                        alert("AJAX request failed: " + xhr.status + " " + xhr.statusText);
+                    }
+                });
+            });
+        });
+    </script>
+<!-- Other existing scripts -->
+<!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+<script>
+    $(document).ready(function() {
+        // 🔹 Live Search Filter
+        $("#search-box").on("keyup", function() {
+            let value = $(this).val().toLowerCase();
+            $("#po-table tbody tr.po-row").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+
+        // 🔹 Toggle filter dropdown
+        $("#filter-btn").click(function() {
+            $("#filter-menu").toggleClass("show-dropdown");
+        });
+
+        // 🔹 Apply Status Filter
+        $("#apply-filter").click(function() {
+            let selectedStatus = $("#status-filter").val();
+            $("#po-table tbody tr.po-row").each(function() {
+                let rowStatus = $(this).data("status");
+                if (selectedStatus === "all" || rowStatus === selectedStatus) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+            $("#filter-menu").removeClass("show-dropdown"); // Close filter dropdown after applying
+        });
+    });
+</script>
+{% endblock %}

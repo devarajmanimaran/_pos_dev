@@ -136,5 +136,8 @@ DATABASES = {
         'PASSWORD': 'admin2025',
         'HOST': 'localhost',
         'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=pos_dev',
+        }
     }
 }

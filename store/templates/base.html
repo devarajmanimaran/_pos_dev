@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermarket POS - Home</title>
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff; /* White header */
+            color: #333;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .header .logo {
+            width: 40px;
+            height: auto;
+        }
+        .sidebar {
+            width: 200px; /* Reduced width */
+            height: 100vh;
+            background-color: #f1f1f1; /* Lighter shade for sidebar */
+            color: #000;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar .menu-text {
+            display: block;
+        }
+        .sidebar.collapsed .menu-text {
+            display: none;
+        }
+        .menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+        .menu-item {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Increased gap for better alignment */
+            transition: background-color 0.3s ease;
+        }
+        .menu-item:hover {
+            background-color: #ddd;
+        }
+        .menu-item i {
+            font-size: 1.2em;
+            width: 20px; /* Fixed width for icons */
+            text-align: center; /* Center-align icons */
+        }
+        .sidebar.collapsed .menu-item:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #34495e;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+            font-size: 0.9em;
+        }
+        .toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            background-color: #f1f1f1;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+        .toggle-btn:hover {
+            background-color: #ddd;
+        }
+        .sidebar.collapsed .toggle-btn {
+            transform: rotate(180deg);
+        }
+        .content {
+            margin-left: 200px; /* Adjusted for reduced sidebar */
+            padding: 30px;
+            background-color: #fff;
+            flex-grow: 1;
+            transition: margin-left 0.3s ease;
+            margin-top: 60px;
+        }
+        .content.expanded {
+            margin-left: 60px;
+        }
+        footer {
+            background-color: #fff;
+            color: #000;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: auto;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            .sidebar .menu-text {
+                display: none;
+            }
+            .content {
+                margin-left: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{% static 'store/POS logo Clopased.png' %}" alt="Logo" class="logo">
+    </div>
+    <div class="sidebar" id="sidebar">
+        <ul class="menu">
+            <li class="menu-item" data-tooltip="Material Inward">
+                <a href="{% url 'material_inward:material_inward' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-truck-moving"></i>
+                    <span class="menu-text">Material Inward</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tooltip="Put Away">
+                <a href="{% url 'putaway_home' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-archive"></i>
+                    <span class="menu-text">Put Away</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tooltip="Rack Replenishment">
+                <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-boxes"></i> <!-- Updated icon for rack replenishment -->
+                    <span class="menu-text">Rack Replenishment</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tooltip="Billing">
+                <a href="{% url 'bill_value' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <i class="fas fa-cash-register"></i>
+                    <span class="menu-text">Billing</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tooltip="PO Creation">
+                <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-file-invoice"></i>
+                    <span class="menu-text">PO Creation</span>
+                </a>
+            </li>
+        </ul>
+        <button class="toggle-btn" id="toggle-btn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </div>
+    <div class="content" id="content">
+        {% block content %}{% endblock %}
+    </div>
+    <footer>
+        &copy; 2023 New Era Software Solutions. All rights reserved.
+    </footer>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const toggleBtn = document.getElementById('toggle-btn');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('expanded');
+        });
+    </script>
+</body>
+</html>
