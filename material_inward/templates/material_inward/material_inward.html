@@ -2,83 +2,208 @@
 
 {% block content %}
 <style>
-	.container {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start; /* Align content to the left */
-		width: 100%;
-		max-width: 1200px;
-		margin-left: 200px; /* Adjusted for sidebar */
-		padding: 10px;
-		transition: margin-left 0.3s ease;
-	}
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        max-width: 1200px;
+        margin-left: 200px;
+        padding: 10px;
+        transition: margin-left 0.3s ease;
+    }
 
-	.container h1 {
-		margin-bottom: 10px; /* Reduce spacing between heading and table */
-	}
+    .container h1 {
+        margin-bottom: 10px;
+    }
 
-	.content {
-		margin-top: 60px; /* Ensure space below the fixed header */
-	}
-	.container.expanded {
-		margin-left: 60px; /* Adjusted for collapsed sidebar */
-	}
-	.table {
-		width: 100%;
-		border-collapse: collapse;
-		margin: 10px 0; /* Reduced margin */
-		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	}
-	.table th, .table td {
-		padding: 12px 15px;
-		text-align: left;
-		border-bottom: 1px solid #ddd;
-	}
-	.table th {
-		background-color: #f8f9fa;
-		font-weight: 500;
-	}
-	.table tbody tr:hover {
-		background-color: #f1f1f1;
-	}
+    .content {
+        margin-top: 60px;
+    }
+
+    .container.expanded {
+        margin-left: 60px;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .table th, .table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 500;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* New styles for search and filter */
+    .search-filter-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .search-box {
+        flex: 1;
+        max-width: 300px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .filter-box {
+        min-width: 150px;
+        padding: 0px 50px;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: white;
+    }
+
+    .search-input:focus, .filter-select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .no-results {
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
 </style>
-	<div class="container" id="container">
-		<h1>Inbound Check</h1>
-		<table class="table">
-			<thead>
-				<tr>
-					<th>PO Number</th>
-					<th>Created Date</th>
-					<th>Status</th>
-					<th>Supplier ID</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for row in data %}
-				<tr>
-					<td>
-						<a href="{% url 'material_inward:po-details' row.PO_NO %}" class="po-link">{{ row.PO_NO }}</a>
-					</td>
-					<td>{{ row.CREATED_DATE }}</td>
-					<td>{{ row.STATUS }}</td>
-					<td>{{ row.SUPPLIER_ID }}</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-	<script>
-        const sidebar = document.getElementById('sidebar');
-        const content = document.getElementById('content');
-        const toggleBtn = document.getElementById('toggle-btn');
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            content.classList.toggle('expanded');
+
+<div class="container" id="container">
+    <h1>Inbound Check</h1>
+    
+    <div class="search-filter-container">
+        <div class="search-box">
+            <input type="text" 
+                   id="searchInput" 
+                   class="search-input" 
+                   placeholder="Search PO Number..."
+                   autocomplete="off">
+        </div>
+        <div class="filter-box">
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+                {% for status in status_list %}
+                    <option value="{{ status }}">{{ status }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>PO Number</th>
+                <th>Created Date</th>
+                <th>Status</th>
+                <th>Supplier ID</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            {% for row in data %}
+            <tr>
+                <td>
+                    <a href="{% url 'material_inward:po-details' row.PO_NO %}" class="po-link">{{ row.PO_NO }}</a>
+                </td>
+                <td>{{ row.CREATED_DATE }}</td>
+                <td>{{ row.STATUS }}</td>
+                <td>{{ row.SUPPLIER_ID }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const content = document.getElementById('content');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const tableBody = document.getElementById('tableBody');
+    const originalRows = Array.from(tableBody.getElementsByTagName('tr'));
+
+    // Toggle sidebar
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        content.classList.toggle('expanded');
+    });
+
+    // Function to filter table rows
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedStatus = statusFilter.value.toLowerCase();
+        let hasResults = false;
+
+        originalRows.forEach(row => {
+            const poNumber = row.getElementsByTagName('td')[0].textContent.toLowerCase();
+            const status = row.getElementsByTagName('td')[2].textContent.toLowerCase();
+            
+            const matchesSearch = poNumber.includes(searchTerm);
+            const matchesStatus = !selectedStatus || status === selectedStatus;
+
+            if (matchesSearch && matchesStatus) {
+                row.style.display = '';
+                hasResults = true;
+            } else {
+                row.style.display = 'none';
+            }
         });
-	window.addEventListener("pageshow", function (event) {
-		if (event.persisted) {
-			location.reload(); // Forces reload when navigating back
-		}
-	});
-	</script>
+
+        // Show/hide no results message
+        let noResultsMsg = document.getElementById('noResultsMessage');
+        if (!hasResults) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.id = 'noResultsMessage';
+                noResultsMsg.className = 'no-results';
+                noResultsMsg.textContent = 'No matching records found';
+                tableBody.parentNode.insertBefore(noResultsMsg, tableBody.nextSibling);
+            }
+        } else if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+
+    // Event listeners for search and filter
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+
+    // Handle page reloads
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+            location.reload();
+        }
+    });
+</script>
 {% endblock %}

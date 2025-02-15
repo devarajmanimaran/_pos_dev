@@ -7,8 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
-
 def material_inward(request):
+
+    status_list = ["Open", "Closed", "Completed", "Partially Received"] 
     # Query data from PostgreSQL table "pos_dev"."PO_ORDER_LINES"
     query = """
     select po_number
@@ -28,7 +29,7 @@ def material_inward(request):
     ]
     data = [dict(zip(columns, row)) for row in rows]
 
-    return render(request, 'material_inward/material_inward.html', {'data': data})
+    return render(request, 'material_inward/material_inward.html', {'data': data, 'status_list': status_list})
 
 def get_po_details(request, po_id):
     order_lines = POOrderLines.objects.filter(po_number=po_id)
