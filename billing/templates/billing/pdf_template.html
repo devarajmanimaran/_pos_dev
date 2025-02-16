@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Bill #{{ bill_no }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .bill-info { margin-bottom: 20px; }
+        .customer-info { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 10pt; }
+        .total { margin-top: 20px; text-align: right;font-size: 11pt; }
+        .taxtotal { margin-top: 20px; text-align: right; font-size: 10pt;}
+        .footer { margin-top: 50px; text-align: center; }
+        .gst-summary {
+            margin-top: 15px;
+            margin-bottom: 15px;
+            font-size: 10pt;
+            text-align: center;
+           
+        }
+        .gst-summary table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        .gst-summary th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: right;
+            font-size: 8pt;
+        }
+        .gst-summary td {
+            text-align: right;
+            padding: 3px;
+            font-size: 8pt;
+        }
+        @media print {
+            body {
+                width: 80mm;
+                margin: 0;
+                padding: 5mm;
+            }
+            /* Add any other print-specific styles */
+        }
+        .shop-info {
+            display: flex;
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+            padding-top: 10px;
+        }
+        .shop-info h1 {
+            margin: 0;
+            font-size: 14pt;
+        }
+        .shop-info p {
+            margin: 2px 0;
+            font-size: 8pt;
+            
+        }
+        
+        .info-container {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8pt;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+        
+        .info-group {
+            display: inline-block;
+            width: 45%;  /* Adjust width as needed */
+        }
+        
+        .customer-info {
+            text-align: left;
+            float: left;
+        }
+        
+        .bill-info {
+            text-align: left;
+            float: right;
+        }
+        
+        .info-row {
+            margin: 2px 0;
+        }
+        .serial-column {
+            width: 5%;
+            text-align: center;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="shop-info">
+
+        <h1>New Era</h1>
+        <p>123 Shop Address Line 1</p>
+        <p>Chennai, TN - PIN Code</p>
+        <p>Phone: +91 1234567890</p>
+        <p>GSTIN: XXXXXXXXXXXX</p>
+    </div>
+
+    <div class="info-container">
+        <div class="info-group customer-info">
+            <p class="info-row"><strong>Name:</strong> {{ customer.name }}</p>
+            <p class="info-row"><strong>Phone:</strong> {{ customer.phone }}</p>
+            <p class="info-row"><strong>Address:</strong> {{ customer.address1 }}</p>
+            {% if customer.address2 %}
+            <p class="info-row">{{ customer.address2 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="info-group bill-info">
+            <p class="info-row"><strong>Bill No:</strong> {{ bill_no }}</p>
+            <p class="info-row"><strong>Date:</strong> {{ date }}</p>
+            <p class="info-row"><strong>Payment:</strong> {{ payment_method }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="serial-column">#</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>GST</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="serial-column">{{ forloop.counter }}</td>
+                <td>{{ item.productName }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹ {{ item.discountPrice }}</td>
+                <td>{{ item.gst_rate1 }}%</td>
+                <td>₹ {{  item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total">
+        <h3>Net Amount: ₹{{ grand_total }}</h3>
+    </div>
+
+    <div class="gst-summary">
+        <h4 style="margin: 5px 0;">Tax Summary</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>GST%</th>
+                    <th>Taxable Value</th>
+                    <th>GST</th>
+                    <th>SGST</th>
+                    <th>Tax</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for summary in tax_summary %}
+                <tr>
+                    <td>{{ summary.gst_rate }}%</td>
+                    <td>₹ {{ summary.taxable_value }}</td>
+                    <td>₹ {{ summary.cgst }}</td>
+                    <td>₹ {{ summary.sgst }}</td>
+                    <td>₹ {{ summary.total_tax }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="taxtotal">
+        <h4>Total Tax : ₹ {{ total_tax_amount }}</h4>
+    </div>
+
+    <div class="footer">
+        <p>Thank you, Visit Again :) </p>
+    </div>
+</body>
+</html>

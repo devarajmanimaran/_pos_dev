@@ -3,54 +3,57 @@
 {% block content %}
     <style>
         :root {
-            --primary-color: #6c81ad;
+            --primary-color: #2563eb;
             --secondary-color: #475569;
-            --success-color: #508f67;
+            --success-color: #16a34a;
             --light-gray: #f1f5f9;
             --border-color: #e2e8f0;
             --text-color-dark: #1e293b;
             --text-color-light: #ffffff;
             --font-family-base: 'Inter', sans-serif;
-            --sidebar-width: 200px; /* Adjusted to match base.html */
+            --sidebar-width: 350px;
             --segment-bg: var(--light-gray);
             --segment-selected: var(--primary-color);
             --segment-hover: #e2e8f0;
-            --page-background: #f4f4f9; /* Match base.html background */
-            --container-width: 95%; /* Wider container */
-            --container-max-width: 1800px; /* Increased max-width */
+            --warning-color: #f59e0b;  /* Add this new color variable */
+            --print-color: #8b5cf6;  /* Add this new purple color */
+            --pastel-orange: #ffd8a8;  /* Add this pastel orange color */
+            --light-green: #0afb60;  /* Add this light green color */
+            --light-blue: #1eadf0;
         }
 
         body {
-            background-color: var(--page-background);
+            font-family: var(--font-family-base);
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
         }
 
         .main-layout {
             display: flex;
-            width: var(--container-width);
-            max-width: var(--container-max-width);
+            width: 100%;
+            padding: 100px;
+            gap: 20px;
+            max-width: 1800px;
             margin: 0 auto;
-            padding: 80px 20px;
-            gap: 30px;
-            transition: all 0.3s ease;
-            min-height: calc(100vh - 120px); /* Account for header and footer */
-        }
-
-        .main-layout.expanded {
-            margin-left: 80px;
-            width: calc(var(--container-width) - 60px);
         }
 
         .sidebar1 {
-            width: 350px; /* Fixed width for customer info */
+            width: var(--sidebar-width);
             flex-shrink: 0;
         }
 
         .customer-details {
             background-color: var(--text-color-light);
+            padding: 0;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            height: fit-content;
             position: sticky;
-            top: 80px;
+            top: 20px;
+            overflow: hidden;
         }
 
         .customer-details input {
@@ -140,9 +143,8 @@
         .billing-container {
             background-color: var(--text-color-light);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%; /* Take full width of parent */
-            min-width: 800px; /* Ensure minimum width */
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
         .form-group {
@@ -187,14 +189,13 @@
         .header1 {
             background-color: var(--primary-color);
             color: var(--text-color-light);
-            padding: 25px 30px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .header h1 {
+        .header1 h1 {
             margin: 0;
             font-size: 2rem;
             font-weight: 600;
@@ -221,16 +222,12 @@
         .table-container {
             overflow-x: auto;
             padding: 0 1.5rem;
-            margin: 20px;
-            border-radius: 8px;
-            background-color: white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0; /* Remove table margin */
+            margin: 1rem 0;
         }
 
         th, td {
@@ -266,7 +263,6 @@
             font-size: 0.95rem;
             color: var(--text-color-dark);
             transition: all 0.3s ease;
-            background-color: white;
         }
 
         .table-container input[type="text"]:focus,
@@ -277,10 +273,9 @@
         }
 
         .footer-actions {
-            padding: 20px 30px;
-            background-color: white;
+            padding: 20px 1.5rem;
+            background-color: var(--light-gray);
             border-top: 1px solid var(--border-color);
-            border-radius: 0 0 12px 12px;
             display: flex;
             justify-content: flex-end;
             gap: 16px;
@@ -314,11 +309,38 @@
 
         .btn-success {
             background-color: var(--success-color);
-            color: var(--text-color-light);
+            color: var (--text-color-light);
         }
 
         .btn-success:hover {
             background-color: #15803d;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: var(--text-color-light);
+        }
+
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+
+        .btn-print {
+            background-color: var(--print-color);
+            color: var(--text-color-light);
+        }
+
+        .btn-print:hover {
+            background-color: #7c3aed;
+        }
+
+        .btn-new {
+            background-color: var(--pastel-orange);
+            color: var(--text-color-dark);
+        }
+
+        .btn-new:hover {
+            background-color: #ffc078;
         }
 
         .total-cell {
@@ -336,17 +358,6 @@
             margin: 0;
         }
 
-        @media (max-width: 1400px) {
-            .main-layout {
-                padding: 80px 15px;
-                gap: 20px;
-            }
-            
-            .sidebar1 {
-                width: 300px;
-            }
-        }
-
         @media (max-width: 1200px) {
             .main-layout {
                 flex-direction: column;
@@ -354,15 +365,10 @@
 
             .sidebar1 {
                 width: 100%;
-                margin-bottom: 20px;
             }
 
             .customer-details {
                 position: static;
-            }
-
-            .billing-container {
-                min-width: 100%;
             }
         }
 
@@ -374,6 +380,34 @@
 
         .btn-save-customer {
             display: none; /* Hidden by default */
+        }
+        .payment-segment-control {
+            display: flex;
+            background-color: var(--segment-bg);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+            margin-right: 16px;
+        }
+
+        .payment-segment-btn {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            color: var(--text-color-dark);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-segment-btn:hover {
+            background-color: var(--segment-hover);
+        }
+
+        .payment-segment-btn.active {
+            background-color: var(--segment-selected);
+            color: var(--text-color-light);
         }
 </style>
 <div class="main-layout" id="main-layout">
@@ -451,7 +485,7 @@
                             <td class="product-name"></td>
                             <td class="unit-price"></td>
                             <td class="discount-price"></td>
-                            <td><input type="number" class="quantity no-spinners" value="1" required></td>
+                            <td><input type="number" step="0.01" class="quantity no-spinners" value="1" required></td>
                             <td class="cgst"></td>
                             <td class="sgst"></td>
                             <td class="total-cell">-</td>
@@ -461,8 +495,15 @@
             </div>
 
             <div class="footer-actions">
+                <button type="button" class="btn btn-new" onclick="resetForm()">New Bill (F4)</button>
+                <div class="payment-segment-control">
+                    <button type="button" class="payment-segment-btn active" data-payment="CASH">CASH</button>
+                    <button type="button" class="payment-segment-btn" data-payment="UPI">UPI</button>
+                    <button type="button" class="payment-segment-btn" data-payment="CARD">CARD</button>
+                </div>
                 <button type="button" class="btn btn-primary" onclick="addNewRow()">Add Item (F2)</button>
                 <button type="button" class="btn btn-success" onclick="processPayment()">Process Payment (F9)</button>
+                <button type="button" class="btn btn-print" onclick="generatePDF()">Print Bill</button>
             </div>
         </div>
     </main>
@@ -492,9 +533,11 @@
 
     function handleCustomerTypeChange(type) {
         clearCustomerFields();
-        // Remove previous event listeners
         const phoneInput = document.getElementById('customerPhone');
-        phoneInput.removeEventListener('blur', fetchCustomerDetails);
+        
+        // Remove all previous event listeners by cloning the element
+        const newPhoneInput = phoneInput.cloneNode(true);
+        phoneInput.parentNode.replaceChild(newPhoneInput, phoneInput);
         
         const saveButton = document.querySelector('.btn-save-customer');
         
@@ -502,28 +545,83 @@
             case 'new':
                 enableCustomerFields(true);
                 saveButton.style.display = 'block';
-                window.currentCustomerId = null;  // Reset customer ID
+                window.currentCustomerId = null;
                 break;
             case 'existing':
                 enableCustomerFields(true);
-                phoneInput.addEventListener('blur', fetchCustomerDetails);
+                // Add keydown event listener for phone input
+                newPhoneInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        lookupCustomer(event.target.value);
+                    }
+                });
                 saveButton.style.display = 'none';
-                window.currentCustomerId = null;  // Reset customer ID
+                window.currentCustomerId = null;
                 break;
             case 'generic':
                 enableCustomerFields(false);
                 setGenericCustomer();
                 saveButton.style.display = 'none';
-                window.currentCustomerId = 'GENERIC001';  // Set generic customer ID
+                window.currentCustomerId = 'GENERIC001';
                 break;
         }
     }
 
-    async function fetchCustomerDetails() {
-        const phone = document.getElementById('customerPhone').value;
+    async function lookupCustomer(phone) {
         if (!phone) {
-            alert('Please enter a phone number');
+            showError('Please enter a phone number');
             return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('phone', phone);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            const response = await fetch("{% url 'get_customer' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.found) {
+                // Populate customer fields
+                window.currentCustomerId = data.customer.customer_id;
+                document.getElementById('customerName').value = data.customer.name;
+                document.getElementById('customerAddress1').value = data.customer.address1;
+                document.getElementById('customerAddress2').value = data.customer.address2;
+                
+                // Disable fields after populating
+                document.getElementById('customerName').disabled = true;
+                document.getElementById('customerAddress1').disabled = true;
+                document.getElementById('customerAddress2').disabled = true;
+                
+                // Move focus to address1 field
+                document.getElementById('customerAddress1').focus();
+            } else {
+                showError('Customer not found with this phone number');
+                if (currentCustomerType === 'existing') {
+                    clearCustomerFields();
+                    document.getElementById('customerPhone').value = phone;
+                    document.getElementById('customerPhone').focus();
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Failed to fetch customer details');
+        }
+    }
+
+    async function fetchCustomerDetails() {
+        const phone = document.getElementById('customerPhone').value.trim();
+        if (!phone) {
+            showError('Please enter a phone number');
+            return false;
         }
 
         try {
@@ -546,19 +644,28 @@
             const data = await response.json();
             
             if (data.found) {
-                window.currentCustomerId = data.customer.customer_id;  // Add this line
+                window.currentCustomerId = data.customer.customer_id;
                 document.getElementById('customerName').value = data.customer.name;
                 document.getElementById('customerAddress1').value = data.customer.address1;
                 document.getElementById('customerAddress2').value = data.customer.address2;
+                
+                // Disable fields for existing customer
+                document.getElementById('customerName').disabled = true;
+                document.getElementById('customerAddress1').disabled = true;
+                document.getElementById('customerAddress2').disabled = true;
+                return true;
             } else {
-                alert(data.error || 'Customer not found with this phone number.');
+                showError('Customer not found with this phone number.');
                 if (currentCustomerType === 'existing') {
                     clearCustomerFields();
+                    document.getElementById('customerPhone').value = phone;
                 }
+                return false;
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to fetch customer details: ' + error.message);
+            showError('Failed to fetch customer details: ' + error.message);
+            return false;
         }
     }
 
@@ -571,7 +678,7 @@
         };
 
         if (!customerData.name || !customerData.phone) {
-            alert('Customer name and phone are required.');
+            showError('Customer name and phone are required.');
             return;
         }
 
@@ -597,13 +704,13 @@
             }
             
             window.currentCustomerId = data.customer_id;  // Add this line
-            alert('Customer saved successfully!');
+            showError('Customer saved successfully!');
             const saveButton = document.querySelector('.btn-save-customer');
             saveButton.style.display = 'none'; // Hide save button after successful save
             
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to save customer: ' + error.message);
+            showError('Failed to save customer: ' + error.message);
         }
     }
 
@@ -617,7 +724,7 @@
             };
 
             if (!customerData.name || !customerData.phone) {
-                alert('Customer name and phone are required for new customers.');
+                showError('Customer name and phone are required for new customers.');
                 return false;
             }
 
@@ -649,7 +756,7 @@
                 return true;
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to save customer: ' + error.message);
+                showError('Failed to save customer: ' + error.message);
                 return false;
             }
         }
@@ -660,30 +767,45 @@
         if (currentCustomerType === 'new') {
             const saveButton = document.querySelector('.btn-save-customer');
             if (saveButton.style.display === 'block') {
-                alert('Please save customer information first');
+                showError('Please save customer information first');
                 return;
             }
         }
 
         if (!window.currentCustomerId) {
-            alert('Please select or save a customer first');
+            showError('Please select or save a customer first');
             return;
         }
 
-        const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
-            productId: row.querySelector('.product-id').value,
-            quantity: row.querySelector('.quantity').value,
-            unitPrice: parseFloat(row.querySelector('.unit-price').textContent),
-            discountPrice: parseFloat(row.querySelector('.discount-price').textContent),
-            cgst: parseFloat(row.querySelector('.cgst').textContent),
-            sgst: parseFloat(row.querySelector('.sgst').textContent),
-            total: parseFloat(row.querySelector('.total-cell').textContent) || 0
-        })).filter(item => item.productId && item.quantity > 0);
+        const processedProducts = new Map();
+        const items = Array.from(document.querySelectorAll('.item-row'))
+            .reduce((acc, row) => {
+                const productId = row.querySelector('.product-id').value;
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+                
+                if (productId && quantity > 0) {
+                    const item = {
+                        productId,
+                        quantity,
+                        unitPrice: parseFloat(row.querySelector('.unit-price').textContent),
+                        discountPrice: parseFloat(row.querySelector('.discount-price').textContent),
+                        cgst: parseFloat(row.querySelector('.cgst').textContent),
+                        sgst: parseFloat(row.querySelector('.sgst').textContent),
+                        total: parseFloat(row.querySelector('.total-cell').textContent) || 0
+                    };
 
-        if (items.length === 0) {
-            alert('No valid items in bill');
-            return;
-        }
+                    // Combine quantities for same product
+                    if (processedProducts.has(productId)) {
+                        const existingItem = processedProducts.get(productId);
+                        existingItem.quantity += item.quantity;
+                        existingItem.total += item.total;
+                    } else {
+                        processedProducts.set(productId, item);
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
 
         try {
             const response = await fetch("{% url 'save_bill' %}", {
@@ -696,7 +818,8 @@
                     items,
                     customer_id: window.currentCustomerId || 'GENERIC001',
                     grandTotal,
-                    totalQuantity
+                    totalQuantity,
+                    paymentMethod: currentPaymentMethod
                 })
             });
 
@@ -707,14 +830,14 @@
             const data = await response.json();
             
             if (data.success) {
-                alert(`Bill saved successfully!\nBill No: ${data.bill_no}\nTotal: ₹${grandTotal.toFixed(2)}`);
-                resetForm();
+                window.lastBillNo = data.bill_no;  // Store the bill number
+                showError(`Bill saved successfully!\nBill No: ${data.bill_no}\nTotal: ₹${grandTotal.toFixed(2)}`);
             } else {
                 throw new Error(data.error || 'Failed to save bill');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to process payment: ' + error.message);
+            showError('Failed to process payment: ' + error.message);
         }
     }
 
@@ -729,11 +852,13 @@
     }
 
     function clearCustomerFields() {
-        document.getElementById('customerName').value = '';
-        document.getElementById('customerPhone').value = '';
-        document.getElementById('customerAddress1').value = '';
-        document.getElementById('customerAddress2').value = '';
-        window.currentCustomerId = null;  // Reset customer ID when clearing fields
+        const fields = ['customerName', 'customerPhone', 'customerAddress1', 'customerAddress2'];
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            field.value = '';
+            field.disabled = false;
+        });
+        window.currentCustomerId = null;
     }
 
     function enableCustomerFields(enabled) {
@@ -828,6 +953,99 @@
         const quantityInput = row.querySelector('.quantity');
         const productId = productIdInput.value;
         const quantity = quantityInput.value;
+
+       
+
+        await calculateProductDetails(row);
+    }
+
+    // Add these new helper functions
+    function findExistingProductRow(productId, currentRow) {
+        const rows = document.querySelectorAll('.item-row');
+        for (const row of rows) {
+            if (row === currentRow) continue;
+            if (row.querySelector('.product-id').value === productId) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    // Add at the top of your script
+    let isProcessingError = false;
+    let lastErrorTimestamp = 0;
+    const ERROR_COOLDOWN = 1000; // 1 second cooldown between errors
+
+    function showError(message) {
+        const now = Date.now();
+        if (!isProcessingError && (now - lastErrorTimestamp) > ERROR_COOLDOWN) {
+            isProcessingError = true;
+            lastErrorTimestamp = now;
+            alert(message);
+            setTimeout(() => {
+                isProcessingError = false;
+            }, ERROR_COOLDOWN);
+        }
+    }
+
+    // Replace the calculateProductDetails function
+    async function calculateProductDetails(row) {
+        if (isProcessingError) return;
+
+        const productIdInput = row.querySelector('.product-id');
+        const quantityInput = row.querySelector('.quantity');
+        const productId = productIdInput.value;
+        const quantity = quantityInput.value;
+
+        if (!productId || !quantity) {
+            clearRowData(row);
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('qty', quantity);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            const response = await fetch("{% url 'bill_value' %}", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                clearRowData(row);
+                productIdInput.value = '';
+                productIdInput.focus();
+                showError(`Product ID "${productId}" not found.`);
+                return;
+            }
+
+            if (data.error) {
+                clearRowData(row);
+                showError(data.error);
+            } else {
+                updateRowData(row, data);
+            }
+        } catch (error) {
+            clearRowData(row);
+            showError('Failed to process item. Please check inputs and try again.');
+        } finally {
+            calculateGrandTotal();
+            updateTotalQuantityDisplay();
+        }
+    }
+
+    async function calculateProductDetails(row) {
+        const productIdInput = row.querySelector('.product-id');
+        const quantityInput = row.querySelector('.quantity');
+        const productId = productIdInput.value;
+        const quantity = quantityInput.value;
         const productNameCell = row.querySelector('.product-name');
         const unitPriceCell = row.querySelector('.unit-price');
         const discountPriceCell = row.querySelector('.discount-price');
@@ -836,14 +1054,7 @@
         const totalCell = row.querySelector('.total-cell');
 
         if (!productId || !quantity) {
-            productNameCell.textContent = '';
-            unitPriceCell.textContent = '';
-            discountPriceCell.textContent = '';
-            cgstCell.textContent = '';
-            sgstCell.textContent = '';
-            totalCell.textContent = '0.00';
-            calculateGrandTotal();
-            updateTotalQuantityDisplay();
+            clearRowData(row);
             return;
         }
 
@@ -862,56 +1073,56 @@
             });
 
             if (!response.ok) {
-                if (response.status === 404) {
-                    alert(`Product ID "${productId}" not found.`);
-                    productIdInput.value = ''; // Clear the product ID input here
-                    productIdInput.focus(); // Keep focus on the product ID input for correction
-                } else {
-                    throw new Error('Network response was not ok');
-                }
-                productNameCell.textContent = '';
-                unitPriceCell.textContent = '';
-                discountPriceCell.textContent = '';
-                cgstCell.textContent = '';
-                sgstCell.textContent = '';
-                totalCell.textContent = '0.00';
-                calculateGrandTotal();
-                updateTotalQuantityDisplay();
+                handleProductError(row, productId, productIdInput);
                 return;
             }
 
             const data = await response.json();
-
             if (data.error) {
-                alert(data.error);
-                productNameCell.textContent = '';
-                unitPriceCell.textContent = '';
-                discountPriceCell.textContent = '';
-                cgstCell.textContent = '';
-                sgstCell.textContent = '';
-                totalCell.textContent = '0.00';
+                clearRowData(row);
+                showError(data.error);
             } else {
-                productNameCell.textContent = data.Product_Name;
-                unitPriceCell.textContent = data.Unit_Price;
-                discountPriceCell.textContent = data.Discount_Price;
-                cgstCell.textContent = data.CGST;
-                sgstCell.textContent = data.SGST;
-                totalCell.textContent = data.Total.toFixed(2);
+                updateRowData(row, data);
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to process item. Please check inputs and try again.');
-            productNameCell.textContent = '';
-            unitPriceCell.textContent = '-';
-            discountPriceCell.textContent = '';
-            cgstCell.textContent = '';
-            sgstCell.textContent = '';
-            totalCell.textContent = '0.00';
+            showError('Failed to process item. Please check inputs and try again.');
+            clearRowData(row);
         } finally {
             calculateGrandTotal();
             updateTotalQuantityDisplay();
         }
     }
+
+    function clearRowData(row) {
+        row.querySelector('.product-name').textContent = '';
+        row.querySelector('.unit-price').textContent = '';
+        row.querySelector('.discount-price').textContent = '';
+        row.querySelector('.cgst').textContent = '';
+        row.querySelector('.sgst').textContent = '';
+        row.querySelector('.total-cell').textContent = '0.00';
+    }
+
+    function updateRowData(row, data) {
+        row.querySelector('.product-name').textContent = data.Product_Name;
+        row.querySelector('.unit-price').textContent = data.Unit_Price;
+        row.querySelector('.discount-price').textContent = data.Discount_Price;
+        row.querySelector('.cgst').textContent = data.CGST;
+        row.querySelector('.sgst').textContent = data.SGST;
+        row.querySelector('.total-cell').textContent = data.Total.toFixed(2);
+    }
+
+    function handleProductError(row, productId, productIdInput) {
+        if (response.status === 404) {
+            showError(`Product ID "${productId}" not found.`);
+            productIdInput.value = '';
+            productIdInput.focus();
+        } else {
+            throw new Error('Network response was not ok');
+        }
+        clearRowData(row);
+    }
+
     function calculateGrandTotal() {
         grandTotal = Array.from(document.querySelectorAll('#items-body .item-row')).reduce((sum, row) => {
             const totalText = row.querySelector('.total-cell').textContent;
@@ -923,8 +1134,8 @@
 
     function updateTotalQuantityDisplay() {
         totalQuantity = Array.from(document.querySelectorAll('#items-body .item-row')).reduce((sum, row) => {
-            const qty = parseInt(row.querySelector('.quantity').value) || 0;
-            return sum + qty;
+            const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+            return sum + Math.ceil (qty);
         }, 0);
         document.getElementById('total-quantity-count').textContent = totalQuantity;
     }
@@ -947,6 +1158,7 @@
         document.getElementById('customerPhone').value = '';
         document.getElementById('customerAddress1').value = '';
         document.getElementById('customerAddress2').value = '';
+        window.lastBillNo = null;
     }
 
     // Keyboard shortcuts
@@ -958,6 +1170,10 @@
         if (e.key === 'F9') {
             e.preventDefault();
             processPayment();
+        }
+        if (e.key === 'F4') {
+            e.preventDefault();
+            resetForm();
         }
     });
 
@@ -972,5 +1188,104 @@
         addRowEventListeners(document.querySelector('.item-row'));
         updateTotalQuantityDisplay();
     });
+
+    // Add payment method handling
+    let currentPaymentMethod = 'CASH';
+
+    document.querySelectorAll('.payment-segment-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.payment-segment-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentPaymentMethod = button.dataset.payment;
+        });
+    });
+
+    async function generatePDF() {
+        if (!window.lastBillNo) {
+            showError('Please process a bill first before generating PDF');
+            return;
+        }
+
+        try {
+            console.log('Starting PDF generation...');  // Debug log
+            
+            const customerData = {
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                address1: document.getElementById('customerAddress1').value,
+                address2: document.getElementById('customerAddress2').value
+            };
+
+            const items = Array.from(document.querySelectorAll('.item-row'))
+                .map(row => ({
+                    productId: row.querySelector('.product-id').value,
+                    productName: row.querySelector('.product-name').textContent,
+                    quantity: parseFloat(row.querySelector('.quantity').value),
+                    unitPrice: parseFloat(row.querySelector('.unit-price').textContent),
+                    discountPrice: parseFloat(row.querySelector('.discount-price').textContent),
+                    cgst: parseFloat(row.querySelector('.cgst').textContent),
+                    sgst: parseFloat(row.querySelector('.sgst').textContent),
+                    total: parseFloat(row.querySelector('.total-cell').textContent)
+                }))
+                .filter(item => item.productId && item.quantity > 0);
+
+            console.log('Sending data:', { items, customer: customerData });  // Debug log
+
+            const response = await fetch("{% url 'generate_pdf' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    items,
+                    customer: customerData,
+                    grandTotal,
+                    billNo: window.lastBillNo,
+                    paymentMethod: currentPaymentMethod
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server response:', response.status, errorText);  // Debug log
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            if (blob.size === 0) {
+                throw new Error('Generated PDF is empty');
+            }
+
+            console.log('PDF generated successfully, size:', blob.size);  // Debug log
+            
+            const url = window.URL.createObjectURL(blob);
+            const printWindow = window.open(url, '_blank');
+            
+            if (printWindow) {
+                printWindow.onload = function() {
+                    printWindow.print();
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                    }, 1000);
+                };
+            } else {
+                showError('Please allow popups to print the bill');
+                // Fallback to direct download if popup is blocked
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bill_${window.lastBillNo}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 1000);
+            }
+        } catch (error) {
+            console.error('PDF Generation Error:', error);  // Debug log
+            showError('Failed to generate PDF: ' + error.message);
+        }
+    }
 </script>
 {% endblock %}

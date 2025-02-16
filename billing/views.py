@@ -1,10 +1,13 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import connection
 import uuid
 from datetime import datetime
 import random
 import json  # Add this import
+from django.template.loader import render_to_string
+import pdfkit  # You'll need to install pdfkit and wkhtmltopdf
+import os
 
 
 def billing_home(request):
@@ -43,10 +46,10 @@ def bill_value(request):
 
         # Convert result to dictionary
         bill_data = dict(zip(columns, result))
-        bill_data["Qty"] = int(qty)
+        bill_data["Qty"] = float(qty)
 
         # Calculate total price
-        bill_data["Total"] = int(qty) * bill_data["Discount_Price"]
+        bill_data["Total"] = float(qty) * bill_data["Discount_Price"]
 
         # Return JSON response
         return JsonResponse(bill_data)
@@ -188,62 +191,76 @@ def save_bill(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
     
     try:
-        # Debug line to check incoming data
-        print("Request body:", request.body.decode('utf-8'))
-        
         data = json.loads(request.body)
         items = data.get('items', [])
         customer_id = data.get('customer_id', 'GENERIC001')
+        payment_method = data.get('paymentMethod', 'CASH')
         
         if not items:
             return JsonResponse({"error": "No items in bill"}, status=400)
+        
+        # Aggregate items by product_id
+        aggregated_items = {}
+        for item in items:
+            product_id = item['productId']
+            if product_id in aggregated_items:
+                # Update existing item
+                agg_item = aggregated_items[product_id]
+                agg_item['quantity'] += float(item['quantity'])
+                agg_item['total'] += float(item['total'])
+            else:
+                # Add new item
+                aggregated_items[product_id] = {
+                    'productId': product_id,
+                    'quantity': float(item['quantity']),
+                    'unitPrice': float(item['unitPrice']),
+                    'discountPrice': float(item['discountPrice']),
+                    'cgst': float(item['cgst']),
+                    'sgst': float(item['sgst']),
+                    'total': float(item['total'])
+                }
+        
+        # Convert back to list
+        items = list(aggregated_items.values())
         
         sales_id = generate_sales_id()
         bill_no = get_bill_number()
         created_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         employee_id = 'admin'
         
-        # Debug lines
-        print(f"Generated sales_id: {sales_id}")
-        print(f"Generated bill_no: {bill_no}")
-        
-        # Insert into sales table
-        sales_query = '''
-        INSERT INTO pos_dev.sales 
-        (sales_id, bill_no, customer_id, total_amount, creation_date, employee_id)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        '''
-        
-        # Insert into sales_details table - adjusted column names
-        details_query = '''
-        INSERT INTO pos_dev.sales_details 
-        (sales_details_id, sales_id, product_id, total_units, unit_price, 
-         discount_price, cgst, sgst, total_amount, created_date, bill_no, customer_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        '''
-        
-        total_bill_amount = 0
+        # Calculate total bill amount
+        total_bill_amount = sum(item['total'] for item in items)
         
         with connection.cursor() as cursor:
             try:
-                # First insert the main sales record
+                # Insert sales record
+                sales_query = '''
+                INSERT INTO pos_dev.sales 
+                (sales_id, bill_no, customer_id, total_amount, creation_date, employee_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                '''
+                
                 cursor.execute(sales_query, [
                     sales_id,
                     bill_no,
                     customer_id,
-                    0,  # Will update this after calculating details
+                    total_bill_amount,
                     created_date,
                     employee_id
                 ])
                 
-                # Then insert each item's details
+                # Insert aggregated sales details
+                details_query = '''
+                INSERT INTO pos_dev.sales_details 
+                (sales_details_id, sales_id, product_id, total_units, unit_price, 
+                 discount_price, cgst, sgst, total_amount, created_date, bill_no, customer_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                '''
+                
                 for item in items:
                     sales_details_id = f"{sales_id}_{item['productId']}"
-                    total_amount = float(item['total'])
-                    cgst_amount = (float(item['cgst']) / 100) * total_amount
-                    sgst_amount = (float(item['sgst']) / 100) * total_amount
-                    
-                    print(f"Processing item: {item}")  # Debug line
+                    cgst_amount = (item['cgst'] / 100) * item['total']
+                    sgst_amount = (item['sgst'] / 100) * item['total']
                     
                     cursor.execute(details_query, [
                         sales_details_id,
@@ -252,21 +269,26 @@ def save_bill(request):
                         item['quantity'],
                         item['unitPrice'],
                         item['discountPrice'],
-                        cgst_amount,  # Changed to calculated amount
-                        sgst_amount,  # Changed to calculated amount
-                        total_amount,
+                        cgst_amount,
+                        sgst_amount,
+                        item['total'],
                         created_date,
                         bill_no,
                         customer_id
                     ])
-                    
-                    total_bill_amount += total_amount
                 
-                # Update the total amount in sales table
-                cursor.execute(
-                    "UPDATE pos_dev.sales SET total_amount = %s WHERE sales_id = %s",
-                    [total_bill_amount, sales_id]
-                )
+                # Add payment record
+                payment_query = '''
+                INSERT INTO pos_dev.bill_payment 
+                (bill_no, payment_mode, total_amount)
+                VALUES (%s, %s, %s)
+                '''
+                
+                cursor.execute(payment_query, [
+                    bill_no,
+                    payment_method,
+                    total_bill_amount
+                ])
                 
                 connection.commit()
                 
@@ -277,12 +299,142 @@ def save_bill(request):
                 })
                 
             except Exception as e:
-                print(f"Database error: {str(e)}")  # Debug line
+                print(f"Database error: {str(e)}")
                 connection.rollback()
-                raise  # Re-raise the exception for the outer try block
+                raise
                 
     except Exception as e:
-        print(f"Error saving bill: {str(e)}")  # Debug line
+        print(f"Error saving bill: {str(e)}")
         return JsonResponse({
             "error": f"Failed to save bill: {str(e)}"
         }, status=500)
+
+def generate_pdf(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            
+            # Aggregate items by product ID
+            aggregated_items = {}
+            for item in data.get('items', []):
+                product_id = item['productId']
+                if product_id in aggregated_items:
+                    agg_item = aggregated_items[product_id]
+                    agg_item['quantity'] += float(item['quantity'])
+                    agg_item['total'] += float(item['total'])
+                    agg_item['gst_rate1']=item['cgst']+item['sgst']
+                else:
+                    aggregated_items[product_id] = {
+                        'productId': product_id,
+                        'productName': item['productName'],
+                        'quantity': float(item['quantity']),
+                        'unitPrice': float(item['unitPrice']),
+                        'discountPrice': float(item['discountPrice']),
+                        'cgst': float(item['cgst']),
+                        'sgst': float(item['sgst']),
+                        'total': float(item['total']),
+                        'gst_rate1': float((item['cgst'])+ (item['sgst']))
+                    }
+
+            # Convert aggregated items back to list
+            items = list(aggregated_items.values())
+            
+            bill_data = {
+                'bill_no': data.get('billNo', ''),
+                'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'payment_method': data.get('paymentMethod', 'CASH'),
+                'customer': data.get('customer', {}),
+                'items': items,
+                'grand_total': data.get('grandTotal', 0),
+            }
+
+            # Calculate tax summary from aggregated items
+            gst_summary = {}
+            total_tax_amount = 0  # Initialize grand total tax
+            
+            for item in items:
+                gst_rate = item['cgst'] + item['sgst']
+                taxable_value = item['discountPrice'] * item['quantity']
+                cgst_amount = (item['cgst'] / 100) * taxable_value
+                sgst_amount = (item['sgst'] / 100) * taxable_value
+                total_tax = cgst_amount + sgst_amount
+                total_tax_amount += total_tax  # Add to grand total tax
+                
+                if gst_rate not in gst_summary:
+                    gst_summary[gst_rate] = {
+                        'taxable_value': taxable_value,
+                        'cgst': cgst_amount,
+                        'sgst': sgst_amount,
+                        'total_tax': total_tax
+                    }
+                else:
+                    summary = gst_summary[gst_rate]
+                    summary['taxable_value'] += taxable_value
+                    summary['cgst'] += cgst_amount
+                    summary['sgst'] += sgst_amount
+                    summary['total_tax'] += total_tax
+
+            # Update bill_data with tax summary and total tax
+            bill_data = {
+                'bill_no': data.get('billNo', ''),
+                'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'payment_method': data.get('paymentMethod', 'CASH'),
+                'customer': data.get('customer', {}),
+                'items': items,
+                'grand_total': data.get('grandTotal', 0),
+                'total_tax_amount': round(total_tax_amount, 2),  # Add total tax to bill data
+                'tax_summary': [
+                    {
+                        'gst_rate': rate,
+                        'taxable_value': round(summary['taxable_value'], 2),
+                        'cgst': round(summary['cgst'], 2),
+                        'sgst': round(summary['sgst'], 2),
+                        'total_tax': round(summary['total_tax'], 2)
+                    }
+                    for rate, summary in sorted(gst_summary.items())
+                ]
+            }
+
+            print("Bill Data for PDF:", bill_data)  # Debug print
+            
+            html_string = render_to_string('billing/pdf_template.html', bill_data)
+            
+            config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+            
+            # Fixed options for thermal printer
+            options = {
+                #'page-size': 'A4',
+                'page-width': '101.6mm',  # 4 inches in mm
+                'page-height': '297mm',    # Default height (will be adjusted automatically)
+                'margin-top': '3mm',
+                'margin-right': '3mm',
+                'margin-bottom': '3mm',
+                'margin-left': '3mm',
+                'encoding': "UTF-8",
+                'no-outline': None,
+                'enable-local-file-access': None,
+                'disable-smart-shrinking': None,
+                'dpi': 300,
+                'quiet': ''
+            }
+            
+            try:
+                pdf = pdfkit.from_string(html_string, False, options=options, configuration=config)
+                if not pdf:
+                    raise Exception("PDF generation failed - empty output")
+                
+                response = HttpResponse(pdf, content_type='application/pdf')
+                response['Content-Disposition'] = 'inline'
+                return response
+                
+            except Exception as e:
+                print(f"PDFKit Error: {str(e)}")
+                raise
+            
+        except Exception as e:
+            print(f"PDF Generation Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
