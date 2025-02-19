@@ -76,7 +76,17 @@ def process_po_receipt(request):
             if not po_number:
                 return JsonResponse({"success": False, "error": "PO number is required."})
 
+            # Validate po_line_id
+            if po_line_id <= 0:
+                return JsonResponse({"success": False, "error": "Invalid PO Line ID."})
+
+            # Check if the PO Line ID exists in the database
             with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM pos_dev.po_order_lines WHERE po_line_id = %s", [po_line_id])
+                if cursor.fetchone()[0] == 0:
+                    return JsonResponse({"success": False, "error": "PO Line ID not found."})
+
+                # Call the stored procedure
                 query = """
                     CALL "pos_dev".process_po_receipt_new(
                         %s, %s, %s, %s, %s, %s, %s, %s
@@ -86,6 +96,7 @@ def process_po_receipt(request):
                     po_number, po_line_id, quantity_invoice, quantity_received,
                     quantity_accepted, quantity_rejected, rejection_reason, priority
                 ])
+
                 # Fetch the new status after processing
                 cursor.execute("SELECT status FROM pos_dev.po_order_lines WHERE po_line_id = %s", [po_line_id])
                 new_status = cursor.fetchone()[0]
