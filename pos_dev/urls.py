@@ -23,4 +23,5 @@ urlpatterns = [
     path('putaway/', include('putaway.urls')),
     path('material_inward/', include('material_inward.urls')),
     path('billing/' ,include('billing.urls')),
+    path('pricing/', include('pricing.urls', namespace='pricing')),
 ]

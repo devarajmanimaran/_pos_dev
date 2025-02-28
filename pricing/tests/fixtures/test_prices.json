@@ -1,0 +1,15 @@
+[
+    {
+        "model": "pos_dev.price_master",
+        "pk": 1,
+        "fields": {
+            "Product_ID": "1000",
+            "Unit_Cost": "40.00",
+            "Unit_Price": "60.00",
+            "Discount_Price": "45.00",
+            "Added_By": "admin",
+            "Modified_By": "admin",
+            "Updated_On": "2024-01-01T00:00:00Z"
+        }
+    }
+]

@@ -1,0 +1,11 @@
+[
+    {
+        "model": "pos_dev.gst",
+        "pk": "CAT1",
+        "fields": {
+            "Category_ID": "CAT1",
+            "CGST": "9.00",
+            "SGST": "9.00"
+        }
+    }
+]

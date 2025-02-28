@@ -1,0 +1,12 @@
+[
+    {
+        "model": "pos_dev.product",
+        "pk": "1000",
+        "fields": {
+            "Product_Name": "Test Product",
+            "Category_ID": "CAT1",
+            "Created_Date": "2024-01-01T00:00:00Z",
+            "Added_By": "admin"
+        }
+    }
+]

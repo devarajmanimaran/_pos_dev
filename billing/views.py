@@ -8,7 +8,12 @@ import json  # Add this import
 from django.template.loader import render_to_string
 import pdfkit  # You'll need to install pdfkit and wkhtmltopdf
 import os
-
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import mm, inch
+from reportlab.platypus import Table, TableStyle
+from io import BytesIO
 
 def billing_home(request):
     return render(request, 'billing/home.html')
@@ -397,44 +402,134 @@ def generate_pdf(request):
 
             print("Bill Data for PDF:", bill_data)  # Debug print
             
-            html_string = render_to_string('billing/pdf_template.html', bill_data)
+            # Create PDF buffer and canvas
+            buffer = BytesIO()
+            pagewidth = 4 * inch
+            pageheight = 11 * inch
+            p = canvas.Canvas(buffer, pagesize=(pagewidth, pageheight))
+
+            # Get current y position for drawing elements
+            y = pageheight - 20
+            margin = 10
+            center = pagewidth/2
+
+            # Following pdf_template.html structure
+            # Shop info section (.shop-info in template)
+            p.setFont("Helvetica-Bold", 14)
+            p.drawCentredString(center, y, "New Era")
+            y -= 15
+
+            p.setFont("Helvetica", 8)
+            shop_info = [
+                "123 Shop Address Line 1",
+                "Chennai, TN - PIN Code",
+                f"Phone: +91 1234567890",
+                f"GSTIN: XXXXXXXXXXXX"
+            ]
+            for line in shop_info:
+                p.drawCentredString(center, y, line)
+                y -= 10
+
+            # Separator line (.shop-info border-bottom in template)
+            y -= 5
+            p.setDash(1, 2)
+            p.line(margin, y, pagewidth - margin, y)
+            p.setDash()
+            y -= 15
+
+            # Info container section (.info-container in template)
+            customer = bill_data['customer']
+            p.setFont("Helvetica", 8)
             
-            config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+            # Left column (customer info)
+            left_x = margin
+            p.drawString(left_x, y, f"Name: {customer.get('name', '')}")
+            p.drawString(left_x, y - 12, f"Phone: {customer.get('phone', '')}")
+            p.drawString(left_x, y - 24, f"Address: {customer.get('address1', '')}")
+
+            # Right column (bill info)
+            right_x = pagewidth - 120
+            p.drawString(right_x, y, f"Bill No: {bill_data['bill_no']}")
+            p.drawString(right_x, y - 12, f"Date: {bill_data['date']}")
+            p.drawString(right_x, y - 24, f"Payment: {bill_data['payment_method']}")
             
-            # Fixed options for thermal printer
-            options = {
-                #'page-size': 'A4',
-                'page-width': '101.6mm',  # 4 inches in mm
-                'page-height': '297mm',    # Default height (will be adjusted automatically)
-                'margin-top': '3mm',
-                'margin-right': '3mm',
-                'margin-bottom': '3mm',
-                'margin-left': '3mm',
-                'encoding': "UTF-8",
-                'no-outline': None,
-                'enable-local-file-access': None,
-                'disable-smart-shrinking': None,
-                'dpi': 300,
-                'quiet': ''
-            }
-            
-            try:
-                pdf = pdfkit.from_string(html_string, False, options=options, configuration=config)
-                if not pdf:
-                    raise Exception("PDF generation failed - empty output")
-                
-                response = HttpResponse(pdf, content_type='application/pdf')
-                response['Content-Disposition'] = 'inline'
-                return response
-                
-            except Exception as e:
-                print(f"PDFKit Error: {str(e)}")
-                raise
-            
+            y -= 45
+
+            # Items table (table in template)
+            table_data = [['#', 'Item', 'Qty', 'Price', 'GST', 'Total']]
+            for idx, item in enumerate(bill_data['items'], 1):
+                table_data.append([
+                    str(idx), 
+                    item['productName'][:20],
+                    str(item['quantity']),
+                    f"₹{item['discountPrice']}",
+                    f"{item['gst_rate1']}%",
+                    f"₹{item['total']}"
+                ])
+
+            table = Table(table_data, colWidths=[15, 95, 25, 40, 25, 40])
+            table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.black),
+            ]))
+
+            table.wrapOn(p, pagewidth - 2*margin, y)
+            table.drawOn(p, margin, y - len(table_data)*20)
+            y = y - len(table_data)*20 - 30
+
+            # Net Amount (.total in template)
+            p.setFont("Helvetica-Bold", 9)
+            p.drawRightString(pagewidth - margin, y, f"Net Amount: ₹{bill_data['grand_total']}")
+            y -= 20
+
+            # GST Summary (.gst-summary in template)
+            p.setFont("Helvetica", 8)
+            p.drawCentredString(center, y, "Tax Summary")
+            y -= 15
+
+            tax_data = [['GST%', 'Value', 'CGST', 'SGST', 'Tax']]
+            for summary in bill_data['tax_summary']:
+                tax_data.append([
+                    f"{summary['gst_rate']}%",
+                    f"₹{summary['taxable_value']}",
+                    f"₹{summary['cgst']}",
+                    f"₹{summary['sgst']}",
+                    f"₹{summary['total_tax']}"
+                ])
+
+            tax_table = Table(tax_data, colWidths=[30, 60, 45, 45, 45])
+            tax_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.black)
+            ]))
+
+            tax_table.wrapOn(p, pagewidth - 2*margin, y)
+            tax_table.drawOn(p, margin, y - len(tax_data)*15)
+            y = y - len(tax_data)*15 - 20
+
+            # Total tax amount (.taxtotal in template)
+            p.drawRightString(pagewidth - margin, y, f"Total Tax: ₹{bill_data['total_tax_amount']}")
+            y -= 20
+
+            # Footer (.footer in template)
+            p.setFont("Helvetica", 8)
+            p.drawCentredString(center, margin + 10, "Thank you, Visit Again :)")
+
+            p.showPage()
+            p.save()
+
+            # Return response
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = 'inline'
+            response.write(buffer.getvalue())
+            buffer.close()
+            return response
+
         except Exception as e:
             print(f"PDF Generation Error: {str(e)}")
             import traceback
             traceback.print_exc()
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)

@@ -1,0 +1,1001 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #475569;
+        --success-color: #16a34a;
+        --light-gray: #f1f5f9;
+        --border-color: #e2e8f0;
+        --text-color-dark: #1e293b;
+        --text-color-light: #ffffff;
+    }
+
+    .price-history-container {
+        padding: 1rem;  /* Reduced padding to maximize space */
+        max-width: 98%;  /* Increased from 1400px to use more screen space */
+        margin: 0 auto;
+    }
+
+    .search-container {
+        display: flex;
+        align-items: flex-end;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        background-color: white;
+        padding: 1.2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+        flex-wrap: wrap;  /* Allow wrapping for better responsive layout */
+    }
+
+    .search-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .product-search {
+        flex: 2;  /* Takes up more space */
+    }
+
+    .date-input {
+        flex: 1;  /* Takes up less space */
+    }
+
+    .search-group label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-color-dark);
+    }
+
+    .search-group input {
+        height: 38px;
+        padding: 0 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background-color: #ffffff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-group input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .search-group input[type="date"] {
+        width: 140px;  /* Fixed width for date inputs */
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: space-between;  /* Space buttons evenly */
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .btn {
+        height: 38px;
+        padding: 0 1rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-filter {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-clear {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .price-table-container {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+    }
+
+    .price-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .price-table th {
+        background-color: var(--primary-color);
+        color: var(--text-color-light);
+        padding: 0.8rem;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .price-table td {
+        padding: 0.8rem;
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;  /* Prevent text wrapping */
+    }
+
+    /* Updated column widths */
+    .price-table th:nth-child(1) { width: 4%; }  /* S.No */
+    .price-table th:nth-child(2) { width: 8%; }  /* Product ID */
+    .price-table th:nth-child(3) { width: 15%; } /* Product Name */
+    .price-table th:nth-child(4) { width: 8%; }  /* Category ID */
+    .price-table th:nth-child(5),
+    .price-table th:nth-child(6) { width: 6%; }  /* CGST, SGST */
+    .price-table th:nth-child(7),
+    .price-table th:nth-child(8),
+    .price-table th:nth-child(9) { width: 8%; }  /* Prices */
+    .price-table th:nth-child(10),
+    .price-table th:nth-child(11) { width: 8%; } /* Added/Modified By */
+    .price-table th:nth-child(12) { width: 13%; } /* Last Updated */
+
+    /* Zebra striping for table rows */
+    .price-table tbody tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+
+    .price-table tbody tr:hover {
+        background-color: #f1f5f9;
+        transition: background-color 0.2s;
+    }
+
+    .price {
+        font-family: monospace;
+        font-size: 1.1em;
+    }
+
+    .timestamp {
+        color: var(--secondary-color);
+        font-size: 0.9em;
+    }
+
+    .table-value {
+        font-family: 'Roboto', sans-serif;
+        font-size: 0.9rem;
+        color: var(--text-color-dark);
+    }
+    
+    .table-date {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 0.9rem;
+        color: var(--secondary-color);
+    }
+    
+    .table-price {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-color-dark);
+    }
+    
+    .table-percentage {
+        font-family: 'Roboto', sans-serif;
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .date-inputs {
+        display: contents;
+    }
+    
+    .btn-filter {
+        padding: 0.75rem 1.5rem;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        height: 42px;
+        margin-left: 1rem;
+    }
+    
+    .btn-clear {
+        padding: 0.75rem 1.5rem;
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        height: 42px;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    @media (max-width: 1200px) {
+        .search-container {
+            grid-template-columns: 1fr 1fr;
+        }
+        .btn-group {
+            grid-column: span 2;
+            justify-content: flex-end;
+        }
+    }
+
+    .edit-mode-controls {
+        display: flex;
+        gap: 1rem;
+        margin-left: auto;
+    }
+    
+    .editable-cell {
+        position: relative;
+    }
+    
+    .editable-cell input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--primary-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-edit-mode {
+        background-color: #f59e0b;  /* Warning color */
+        color: white;
+    }
+    
+    .btn-update {
+        background-color: var(--success-color);
+        display: none;
+    }
+    
+    .edit-mode .btn-update {
+        display: inline-flex;
+    }
+    
+    .edit-mode .editable {
+        background-color: #fff3e0;
+    }
+
+    .actions-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 0.75rem; /* Slightly reduced gap */
+        width: 100%;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+        align-items: flex-end;
+    }
+
+    .search-group {
+        flex: 1; /* All groups take equal space */
+    }
+
+    .search-group.product-id,
+    .search-group.category-id {
+        flex: 0.6; /* Reduced width for IDs */
+    }
+
+    .search-group.product-name {
+        flex: 1; /* Slightly reduced width for name */
+    }
+
+    .search-group.date-input {
+        flex: 0.5; /* Much smaller width for dates */
+    }
+
+    .button-group {
+        flex: 2.5; /* Increased space for buttons */
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-left: auto;
+    }
+
+    .edit-controls {
+        display: flex;
+        gap: 0.5rem;
+        background-color: white;
+        padding: 1.2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-edit-mode {
+        background-color: #f59e0b;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-edit-mode.active {
+        background-color: #16a34a;
+    }
+
+    .btn-edit-mode i {
+        font-size: 1.1rem;
+    }
+
+    .btn-save {
+        background-color: #16a34a;
+        display: none;
+    }
+
+    .edit-mode .btn-save {
+        display: inline-flex;
+    }
+
+    .btn-commit {
+        background-color: var(--success-color);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .edit-mode .btn-commit {
+        display: inline-flex;
+    }
+
+    .edit-controls-container {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    
+    .btn-save-changes {
+        background-color: #16a34a;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    .btn-save-changes.enabled {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    .btn-save-changes:hover {
+        background-color: #15803d;
+    }
+
+    .edit-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .btn-edit-mode, .btn-save-changes {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+    }
+
+    .btn-edit-mode {
+        background-color: #f59e0b;
+    }
+
+    .btn-save-changes {
+        background-color: #16a34a;
+        opacity: 0.5;  /* Semi-transparent when not in edit mode */
+        pointer-events: none;  /* Disable clicks when not in edit mode */
+    }
+
+    .edit-mode .btn-save-changes {
+        opacity: 1;  /* Fully visible in edit mode */
+        pointer-events: auto;  /* Enable clicks in edit mode */
+    }
+
+    .price-table-container.edit-mode ~ .actions-container .btn-save-changes {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .btn-edit-mode.disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .historical-notice {
+        background-color: #fef3c7;
+        color: #92400e;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .historical-notice.visible {
+        display: flex;
+    }
+
+    .excel-controls {
+        display: flex;
+        gap: 0.5rem;
+        background-color: white;
+        padding: 1.2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-download, .btn-upload {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+    }
+
+    .btn-download {
+        background-color: #3b82f6;
+    }
+
+    .btn-upload {
+        background-color: #8b5cf6;
+    }
+
+    .preview-dialog {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-width: 80%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .button-separator {
+        height: 24px;
+        width: 1px;
+        background-color: var(--border-color);
+        margin: 0 0.25rem;
+    }
+
+    /* Unified button styles */
+    .btn, .btn-filter, .btn-clear, .btn-edit-mode, 
+    .btn-save-changes, .btn-download, .btn-upload {
+        height: 38px;
+        padding: 0 1rem;
+        min-width: 110px;  /* Give all buttons same minimum width */
+        font-size: 0.9rem;
+    }
+
+    .pagination-container {
+        background-color: white;
+        padding: 0.35rem 0.75rem; /* Even more reduced padding */
+        border-radius: 4px;  /* Smaller border radius */
+        margin-bottom: 0.5rem; /* Reduced margin */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Even subtler shadow */
+        border: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 38px; /* Reduced height */
+        font-size: 0.8rem; /* Smaller base font size */
+    }
+
+    .pagination-info {
+        color: var(--secondary-color);
+        font-size: 0.8rem; /* Smaller info text */
+        white-space: nowrap;
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 0.25rem; /* Tighter spacing between buttons */
+        align-items: center;
+        height: 100%;
+    }
+
+    .pagination-btn {
+        padding: 0.15rem 0.35rem; /* Smaller padding */
+        border: 1px solid var(--border-color);
+        border-radius: 3px; /* Smaller border radius */
+        background-color: white;
+        color: var(--text-color-dark);
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        height: 24px; /* Reduced height */
+        min-width: 24px; /* Smaller square buttons */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pagination-btn i {
+        font-size: 0.8rem; /* Smaller icons */
+    }
+
+    .current-page {
+        padding: 0.15rem 0.5rem;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 3px;
+        font-weight: 500;
+        font-size: 0.8rem;
+        height: 24px; /* Match button height */
+        display: flex;
+        align-items: center;
+    }
+
+    /* Improve hover states for better usability despite smaller size */
+    .pagination-btn:hover:not(:disabled) {
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-1px);
+    }
+</style>
+
+<div class="price-history-container">
+    <div class="actions-container">
+        <div class="search-filters">
+            <div class="search-group product-id">
+                <label for="product_id">Product ID</label>
+                <input type="text" id="product_id" name="product_id" 
+                       value="{{ product_id }}" 
+                       placeholder="Enter ID">
+            </div>
+            <div class="search-group product-name">
+                <label for="product_name">Product Name</label>
+                <input type="text" id="product_name" name="product_name" 
+                       value="{{ product_name }}" 
+                       placeholder="Search Name">
+            </div>
+            <div class="search-group category-id">
+                <label for="category_id">Category ID</label>
+                <input type="text" id="category_id" name="category_id" 
+                       value="{{ category_id }}" 
+                       placeholder="Category">
+            </div>
+            <div class="search-group date-input">
+                <label for="start_date">Start Date</label>
+                <input type="date" id="start_date" name="start_date" 
+                       value="{{ start_date }}">
+            </div>
+            <div class="search-group date-input">
+                <label for="end_date">End Date</label>
+                <input type="date" id="end_date" name="end_date" 
+                       value="{{ end_date }}">
+            </div>
+            <div class="button-group">
+                <button onclick="applyFilters()" class="btn btn-filter">Filter</button>
+                <button onclick="clearFilters()" class="btn btn-clear">Clear</button>
+                
+                <div class="button-separator"></div>
+                
+                <button onclick="toggleEditMode()" class="btn-edit-mode">
+                    <i class="fas fa-edit"></i>
+                    <span id="editModeText">Edit Mode</span>
+                </button>
+                <button onclick="saveChanges()" class="btn-save-changes">
+                    <i class="fas fa-save"></i>
+                    Save
+                </button>
+                
+                <div class="button-separator"></div>
+                
+                <button onclick="downloadExcel()" class="btn-download">
+                    <i class="fas fa-download"></i>
+                    Download Master
+                </button>
+                <label for="excelUpload" class="btn-upload">
+                    <i class="fas fa-upload"></i>
+                    Upload Master
+                </label>
+                <input type="file" id="excelUpload" accept=".xlsx" 
+                       style="display: none;" onchange="handleExcelUpload(this)">
+            </div>
+        </div>
+    </div>
+
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Showing {{ pagination.showing_start }} to {{ pagination.showing_end }} of {{ pagination.total_records }} records
+        </div>
+        <div class="pagination-controls">
+            <button 
+                class="pagination-btn" 
+                onclick="changePage(1)"
+                {% if not pagination.has_previous %}disabled{% endif %}>
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button 
+                class="pagination-btn" 
+                onclick="changePage({{ pagination.current_page|add:'-1' }})"
+                {% if not pagination.has_previous %}disabled{% endif %}>
+                <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="current-page">Page {{ pagination.current_page }} of {{ pagination.total_pages }}</span>
+            <button 
+                class="pagination-btn" 
+                onclick="changePage({{ pagination.current_page|add:'1' }})"
+                {% if not pagination.has_next %}disabled{% endif %}>
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button 
+                class="pagination-btn" 
+                onclick="changePage({{ pagination.total_pages }})"
+                {% if not pagination.has_next %}disabled{% endif %}>
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="historical-notice" id="historicalNotice">
+        <i class="fas fa-history"></i>
+        <span>Viewing historical data - Edit mode disabled</span>
+    </div>
+
+    <div class="price-table-container">
+        <table class="price-table">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Category ID</th>
+                    <th>CGST</th>
+                    <th>SGST</th>
+                    <th>Unit Cost</th>
+                    <th>Unit Price</th>
+                    <th>Discount Price</th>
+                    <th>Added By</th>
+                    <th>Modified By</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for price in prices %}
+                <tr data-product-id="{{ price.product_id }}">
+                    <td class="table-value">{{ price.serial_no }}</td>
+                    <td class="table-value">{{ price.product_id }}</td>
+                    <td class="table-value editable" data-field="product_name">{{ price.product_name }}</td>
+                    <td class="table-value editable" data-field="category_id">{{ price.category_id }}</td>
+                    <td class="table-percentage">{{ price.cgst }}%</td>
+                    <td class="table-percentage">{{ price.sgst }}%</td>
+                    <td class="table-price">₹ {{ price.unit_cost }}</td>
+                    <td class="table-price">₹ {{ price.unit_price }}</td>
+                    <td class="table-price editable" data-field="discount_price">₹ {{ price.discount_price }}</td>
+                    <td class="table-value">{{ price.added_by }}</td>
+                    <td class="table-value">{{ price.modified_by }}</td>
+                    <td class="table-date">{{ price.updated_on }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const productIdInput = document.getElementById('product_id');
+    const productNameInput = document.getElementById('product_name');
+    const categoryIdInput = document.getElementById('category_id');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        if (productIdInput.value) {
+            params.set('product_id', productIdInput.value.trim());
+        }
+        if (productNameInput.value) {
+            params.set('product_name', productNameInput.value.trim());
+        }
+        if (categoryIdInput.value) {
+            params.set('category_id', categoryIdInput.value.trim());
+        }
+        
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (startDate && endDate) {
+            params.set('start_date', startDate);
+            params.set('end_date', endDate);
+        } else if (startDate || endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+        
+        params.set('page', '1');  // Reset to first page when applying filters
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+    
+    function clearFilters() {
+        productIdInput.value = '';
+        productNameInput.value = '';
+        categoryIdInput.value = '';
+        startDateInput.value = '';
+        endDateInput.value = '';
+        window.location.href = window.location.pathname;
+    }
+    
+    // Add keyup event listeners for all search inputs
+    [productIdInput, productNameInput, categoryIdInput].forEach(input => {
+        input.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    });
+
+    let isEditMode = false;
+    const editableFields = ['product_name', 'category_id', 'discount_price'];
+    
+    function toggleEditMode() {
+        if (isHistoricalView) {
+            showError('Edit mode is not available when viewing historical data');
+            return;
+        }
+        
+        isEditMode = !isEditMode;
+        const container = document.querySelector('.price-table-container');
+        const saveButton = document.querySelector('.btn-save-changes');
+        const editButtonText = document.getElementById('editModeText');
+        
+        container.classList.toggle('edit-mode');
+        editModeButton.classList.toggle('active');
+        saveButton.classList.toggle('enabled');  // Use class instead of inline styles
+        editButtonText.textContent = isEditMode ? 'Disable Edit Mode' : 'Enable Edit Mode';
+        
+        const editables = document.querySelectorAll('.editable');
+        editables.forEach(cell => {
+            if (isEditMode) {
+                const value = cell.textContent.replace('₹', '').trim();
+                const field = cell.dataset.field;
+                cell.innerHTML = `<input type="text" value="${value}" data-original="${value}" data-field="${field}">`;
+            } else {
+                const input = cell.querySelector('input');
+                if (input) {
+                    cell.textContent = cell.dataset.field === 'discount_price' ? 
+                        `₹${input.value}` : input.value;
+                }
+            }
+        });
+    }
+    
+    async function saveChanges(updates = null) {
+        // If no updates provided, collect from UI
+        if (!updates) {
+            updates = [];
+            const rows = document.querySelectorAll('tr[data-product-id]');
+            
+            rows.forEach(row => {
+                const productId = row.dataset.productId;
+                const inputs = row.querySelectorAll('input');
+                const changes = {};
+                let hasChanges = false;
+                
+                inputs.forEach(input => {
+                    if (input.value !== input.dataset.original) {
+                        changes[input.dataset.field] = input.value;
+                        hasChanges = true;
+                    }
+                });
+                
+                if (hasChanges) {
+                    updates.push({
+                        product_id: productId,
+                        ...changes
+                    });
+                }
+            });
+        }
+
+        if (updates.length === 0) {
+            alert('No changes to save');
+            return;
+        }
+
+        try {
+            const response = await fetch("{% url 'pricing:update_price' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(updates)
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save changes');
+            }
+
+            alert(data.message || 'Changes saved successfully!');
+            if (data.errors) {
+                console.warn('Some updates had errors:', data.errors);
+            }
+            window.location.reload();
+
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Error saving changes: ' + error.message);
+        }
+    }
+
+    async function commitChanges() {
+        const answer = confirm("Are you sure you want to commit these changes? This action cannot be undone.");
+        if (!answer) return;
+
+        try {
+            const response = await saveChanges();
+            if (response && response.ok) {
+                alert('Changes committed successfully!');
+                toggleEditMode(); // Turn off edit mode
+                window.location.reload(); // Refresh to show new data
+            }
+        } catch (error) {
+            alert('Error committing changes: ' + error.message);
+        }
+    }
+
+    const isHistoricalView = {{ is_historical|lower }};
+    const editModeButton = document.querySelector('.btn-edit-mode');
+    const historicalNotice = document.getElementById('historicalNotice');
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (isHistoricalView) {
+            editModeButton.classList.add('disabled');
+            historicalNotice.classList.add('visible');
+            editModeButton.onclick = function(e) {
+                e.preventDefault();
+                showError('Edit mode is not available when viewing historical data');
+            };
+        }
+    });
+
+    async function downloadExcel() {
+        try {
+            const baseUrl = "{% url 'pricing:pricing_index' %}";
+            const params = new URLSearchParams({
+                product_id: productIdInput.value || '',
+                product_name: productNameInput.value || '',
+                category_id: categoryIdInput.value || '',
+                start_date: startDateInput.value || '',
+                end_date: endDateInput.value || ''
+            });
+
+            const downloadUrl = `${baseUrl}excel/download/?${params.toString()}`;
+            
+            const response = await fetch(downloadUrl, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `price_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            alert('Failed to download Excel: ' + error.message);
+        }
+    }
+
+    async function handleExcelUpload(input) {
+        if (!input.files || !input.files[0]) return;
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        
+        try {
+            const response = await fetch("{% url 'pricing:upload_excel' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            if (data.changes.length === 0) {
+                alert('No changes detected in the uploaded file.');
+                return;
+            }
+
+            let message = `Found ${data.summary.total_products} products with changes:\n`;
+            message += `• ${data.summary.price_changes} price updates\n`;
+            message += `• ${data.summary.name_changes} name updates\n`;
+            message += `• ${data.summary.category_changes} category updates\n\n`;
+            
+            if (data.errors && data.errors.length > 0) {
+                message += `\nWarnings:\n${data.errors.join('\n')}`;
+            }
+            
+            message += '\nWould you like to apply these changes?';
+
+            if (confirm(message)) {
+                const updates = data.changes.map(change => ({
+                    product_id: change.product_id,
+                    ...(change.new.product_name && { product_name: change.new.product_name }),
+                    ...(change.new.category_id && { category_id: change.new.category_id }),
+                    ...(change.new.discount_price && { discount_price: change.new.discount_price.toString() })
+                }));
+
+                await saveChanges(updates);
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        }
+
+        input.value = ''; // Clear the input
+    }
+
+    function changePage(page) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+</script>
+{% endblock %}
