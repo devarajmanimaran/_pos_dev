@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'putaway',
     'material_inward',
     'billing',
+    'purchase_order',
+    'pricing',
 ]
 
 MIDDLEWARE = [

@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelTable(
             name='poorderlines',
-            table='pos_dev.Po_Order_Lines',
+            table='"pos_dev"."po_order_lines"',
         ),
     ]

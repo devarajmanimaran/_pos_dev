@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Purchase Order{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Add New Purchase Order</h2>
+    
+    {% if error_message %}
+    <div class="alert alert-danger" role="alert">
+        {{ error_message }}
+    </div>
+    {% else %}
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Purchase Detail Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Purchase Detail</h4>
+            </div>
+            <div class="card-body">
+                <!-- PO Number -->
+                <div class="form-group mb-3">
+                    <label for="po_number">PO Number</label>
+                    <input type="text" name="po_number" class="form-control" value="{{ form.po_number.value }}" readonly>
+                </div>
+
+                <!-- Priority -->
+                <div class="form-group mb-3">
+                    <label for="priority">Priority</label>
+                    {{ form.priority }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier Details Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Supplier Details</h4>
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label for="supplier_name">Supplier Name</label>
+                    <select name="supplier" id="supplier_select" class="form-control">
+                        <option value="">Select Supplier</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.supplier_id }}">{{ supplier.supplier_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="address">Address</label>
+                    <input type="text" id="supplier_address" class="form-control" readonly>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="phone">Phone</label>
+                    <input type="text" id="supplier_phone" class="form-control" readonly>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="shipping">Shipping</label>
+                    <input type="text" class="form-control" value="By Supplier" readonly>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="payment_terms">Payment Terms</label>
+                    <input type="text" id="supplier_payment_terms" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Product Details</h4>
+            </div>
+            <div class="card-body">
+                <table class="table" id="product-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Order Qty</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="product-row-0">
+                            <td>
+                                <select name="product-0" class="form-control product-select">
+                                    <option value="">Select Product</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.product_id }}">{{ product.product_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="category-0" class="form-control" readonly></td>
+                            <td><input type="number" name="qty-0" class="form-control qty-input"></td>
+                            <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-primary" id="add-product-row">Add Product</button>
+            </div>
+        </div>
+
+        <!-- Cost Summary Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Cost Summary</h4>
+            </div>
+            <div class="card-body">
+                <table class="table" id="cost-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Order Qty</th>
+                            <th>Unit Cost</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="row justify-content-end mt-3">
+                    <div class="col-md-4">
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-6 col-form-label">Shipping Cost:</label>
+                            <div class="col-sm-6">
+                                <input type="number" id="shipping-cost" class="form-control" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-6 col-form-label font-weight-bold">Total:</label>
+                            <div class="col-sm-6">
+                                <input type="text" id="total-cost" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'purchase_order_list' %}" class="btn btn-secondary">Cancel</a>
+        <input type="hidden" name="total_value" id="total-value">
+    </form>
+    {% endif %}
+</div>
+
+<!-- JavaScript for Dynamic Behavior -->
+<script>
+    let rowCount = 1;
+    const supplierSelect = document.getElementById('supplier_select');
+    const productSelects = document.getElementsByClassName('product-select');
+
+    // Supplier selection handler
+    supplierSelect.addEventListener('change', function() {
+        const supplierId = this.value;
+        console.log('Selected supplier:', supplierId);  // Debug log
+        
+        updateSupplierDetails(supplierId);
+        
+        // Clear and update all product selects
+        Array.from(productSelects).forEach(select => {
+            select.innerHTML = '<option value="">Select Product</option>';
+            if (supplierId) {
+                updateProductOptionsForSelect(select, supplierId);
+            }
+        });
+    });
+
+    // Product selection handler
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-select')) {
+            const productId = e.target.value;
+            const row = e.target.closest('tr');
+            const categoryInput = row.querySelector('input[name^="category-"]');
+
+            if (productId) {
+                console.log('Selected product:', productId);  // Debug log
+                
+                // Only update supplier if not already selected
+                if (!supplierSelect.value) {
+                    console.log('Updating suppliers for product:', productId);  // Debug log
+                    fetch(`/purchase_order/get-suppliers/${productId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.suppliers && data.suppliers.length > 0) {
+                                supplierSelect.innerHTML = '<option value="">Select Supplier</option>' +
+                                    data.suppliers.map(s => `<option value="${s.supplier_id}">${s.supplier_name}</option>`).join('');
+                                console.log('Updated supplier options:', data.suppliers);  // Debug log
+                            }
+                        })
+                        .catch(error => console.error('Error updating suppliers:', error));
+                }
+
+                // Get category
+                fetch(`/purchase_order/get-category/${productId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.category_name) {
+                            categoryInput.value = data.category_name;
+                            console.log('Updated category:', data.category_name);  // Debug log
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+
+                // Update cost summary
+                updateCostSummary();
+            }
+        }
+    });
+
+    // Modified updateProductOptions to work with a specific select element
+    function updateProductOptionsForSelect(selectElement, supplierId) {
+        if (supplierId) {
+            fetch(`/purchase_order/get-products/${supplierId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const products = data.products;
+                    selectElement.innerHTML = '<option value="">Select Product</option>' +
+                        products.map(p => `<option value="${p.product_id}">${p.product_name}</option>`).join('');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+
+    function updateSupplierDetails(supplierId) {
+        if (supplierId) {
+            fetch(`/purchase_order/get-supplier-details/${supplierId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('supplier_address').value = data.address;
+                    document.getElementById('supplier_phone').value = data.phone;
+                    document.getElementById('supplier_payment_terms').value = data.payment_terms;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+
+    function updateSupplierOptions(productId) {
+        if (productId && !supplierSelect.value) {
+            fetch(`/purchase_order/get-suppliers/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const suppliers = data.suppliers;
+                    supplierSelect.innerHTML = '<option value="">Select Supplier</option>' +
+                        suppliers.map(s => `<option value="${s.supplier_id}">${s.supplier_name}</option>`).join('');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+
+    // Add Product Row with supplier-specific products
+    document.getElementById('add-product-row').addEventListener('click', function () {
+        const table = document.getElementById('product-table').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        newRow.id = `product-row-${rowCount}`;
+        
+        // Create the row with an empty product select initially
+        newRow.innerHTML = `
+            <td>
+                <select name="product-${rowCount}" class="form-control product-select">
+                    <option value="">Select Product</option>
+                </select>
+            </td>
+            <td><input type="text" name="category-${rowCount}" class="form-control" readonly></td>
+            <td><input type="number" name="qty-${rowCount}" class="form-control qty-input"></td>
+            <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+        `;
+
+        // Get the new product select and update its options based on the current supplier
+        const newProductSelect = newRow.querySelector('.product-select');
+        if (supplierSelect.value) {
+            updateProductOptionsForSelect(newProductSelect, supplierSelect.value);
+        }
+
+        rowCount++;
+        updateCostSummary();
+    });
+
+    // Remove Product Row
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('tr').remove();
+            updateCostSummary();
+        }
+    });
+
+    // Function to fetch unit cost for a product-supplier combination
+    async function getUnitCost(productId, supplierId) {
+        if (!productId || !supplierId) return 0;
+        
+        try {
+            const response = await fetch(`/purchase_order/get-unit-cost/${productId}/${supplierId}/`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            console.log('Unit cost data:', data); // Debug log
+            return data.unit_cost || 0;
+        } catch (error) {
+            console.error('Error fetching unit cost:', error);
+            return 0;
+        }
+    }
+
+    // Function to update cost summary
+    async function updateCostSummary() {
+        const costSummaryTable = document.getElementById('cost-summary-table').getElementsByTagName('tbody')[0];
+        costSummaryTable.innerHTML = '';
+        let totalSubtotal = 0;
+
+        const productRows = document.querySelectorAll('#product-table tbody tr');
+        const supplierId = document.getElementById('supplier_select').value;
+
+        // Remove existing hidden fields
+        document.querySelectorAll('input[name^="unit-cost-"]').forEach(el => el.remove());
+        document.querySelectorAll('input[name^="subtotal-"]').forEach(el => el.remove());
+
+        for (const row of productRows) {
+            const productSelect = row.querySelector('.product-select');
+            const qtyInput = row.querySelector('.qty-input');
+            
+            if (productSelect.value && qtyInput.value && supplierId) {
+                const productId = productSelect.value;
+                const productName = productSelect.options[productSelect.selectedIndex].text;
+                const quantity = parseInt(qtyInput.value) || 0;
+                const index = row.id.split('-')[2];
+                
+                const unitCost = await getUnitCost(productId, supplierId);
+                const subtotal = quantity * unitCost;
+                totalSubtotal += subtotal;
+
+                // Add hidden fields for this row
+                const form = document.querySelector('form');
+                form.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" name="unit-cost-${index}" value="${unitCost}">
+                    <input type="hidden" name="subtotal-${index}" value="${subtotal}">
+                `);
+
+                const newRow = costSummaryTable.insertRow();
+                newRow.innerHTML = `
+                    <td>${productName}</td>
+                    <td>${quantity}</td>
+                    <td>$${unitCost.toFixed(2)}</td>
+                    <td>$${subtotal.toFixed(2)}</td>
+                `;
+            }
+        }
+
+        calculateTotal(totalSubtotal);
+    }
+
+    function calculateTotal(subtotal) {
+        const shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
+        const total = subtotal + shippingCost;
+        document.getElementById('total-cost').value = `$${total.toFixed(2)}`;
+        document.getElementById('total-value').value = total.toFixed(2);
+    }
+
+    // Update event listeners
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-select') || 
+            e.target.classList.contains('qty-input') || 
+            e.target.id === 'shipping-cost') {
+            updateCostSummary();
+        }
+    });
+</script>
+{% endblock %}

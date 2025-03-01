@@ -24,7 +24,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #eeeeee; /* White header */
+            background-color: #eeeeee;
             color: #333;
             z-index: 1000;
             display: flex;
@@ -37,9 +37,9 @@
             height: auto;
         }
         .sidebar {
-            width: 200px; /* Reduced width */
+            width: 200px; 
             height: 100vh;
-            background-color: #f1f1f1; /* Lighter shade for sidebar */
+            background-color: #f1f1f1;
             color: #000;
             position: fixed;
             top: 60px;
@@ -50,7 +50,7 @@
             transition: width 0.3s ease;
         }
         .sidebar.collapsed {
-            width: 60px;
+            width: 70px;
         }
         .sidebar .menu-text {
             display: block;
@@ -69,7 +69,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 15px; /* Increased gap for better alignment */
+            gap: 15px;
             transition: background-color 0.3s ease;
         }
         .menu-item:hover {
@@ -77,8 +77,11 @@
         }
         .menu-item i {
             font-size: 1.2em;
-            width: 20px; /* Fixed width for icons */
-            text-align: center; /* Center-align icons */
+            width: 20px;
+            text-align: center;
+        }
+        .sidebar.collapsed .menu-item {
+           position: relative; /* Ensures the tooltip is positioned relative to the menu item */
         }
         .sidebar.collapsed .menu-item:hover::after {
             content: attr(data-tooltip);
@@ -116,7 +119,7 @@
             transform: rotate(180deg);
         }
         .content {
-            margin-left: 200px; /* Adjusted for reduced sidebar */
+            margin-left: 200px;
             padding: 30px;
             background-color: #fff;
             flex-grow: 1;
@@ -177,9 +180,15 @@
                 </a>
             </li>
             <li class="menu-item" data-tooltip="PO Creation">
-                <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                <a href="{% url 'purchase_order_list' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
                     <i class="fas fa-file-invoice"></i>
-                    <span class="menu-text">PO Creation</span>
+                    <span class="menu-text">Purchase Order</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tooltip="Pricing">
+                <a href="{% url 'pricing:pricing_index' %}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fas fa-circle-dollar-to-slot"></i>
+                    <span class="menu-text">Pricing</span>
                 </a>
             </li>
         </ul>

@@ -2,20 +2,22 @@
 
 {% block content %}
 <style>
-    /* Your existing CSS styles */
+    /* Parent wrapper to center the container */
+    .wrapper {
+        display: flex;
+        justify-content: center; /* Center horizontally */
+        width: 100%;
+        padding: 20px; /* Add some padding */
+    }
+
     .container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
-        max-width: 1200px;
-        margin-left: 200px;
+        max-width: 1200px; /* Limit maximum width */
         padding: 10px;
         transition: margin-left 0.3s ease;
-    }
-
-    .container.expanded {
-        margin-left: 250px;
     }
 
     .container h1 {
@@ -23,7 +25,7 @@
     }
 
     .content {
-        margin-top: 60px;
+        margin-top: 30px;
     }
 
     .table {
@@ -34,7 +36,7 @@
     }
 
     .table th, .table td {
-        padding: 20px 55px;
+        padding: 12px 15px;
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
@@ -45,7 +47,7 @@
     }
 
     .table tbody tr:hover {
-        background-color: #e0e0e0;
+        background-color: #f1f1f1;
     }
 
     .expandable-row {
@@ -181,76 +183,79 @@
     }
 </style>
 
-<div class="container" id="container">
-    <h1>PO Order Details</h1>
-    <div class="search-filter-container">
-        <div class="search-box">
-            <input type="text" 
-                   id="searchInput" 
-                   class="search-input" 
-                   placeholder="Search Line ID or Product Name..."
-                   autocomplete="off">
+<!-- Wrapper to center the container -->
+<div class="wrapper">
+    <div class="container" id="container">
+        <h1>PO Order Details</h1>
+        <div class="search-filter-container">
+            <div class="search-box">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Search Line ID or Product Name..."
+                       autocomplete="off">
+            </div>
+            <div class="filter-box">
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="Received">Received</option>
+                    <option value="Partially Received">Partially Received</option>
+                    <option value="Pending for approval">Pending for Approval</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
         </div>
-        <div class="filter-box">
-            <select id="statusFilter" class="filter-select">
-                <option value="">All Status</option>
-                <option value="Open">Open</option>
-                <option value="Received">Received</option>
-                <option value="Partially Received">Partially Received</option>
-                <option value="Pending for approval">Pending for Approval</option>
-                <option value="Rejected">Rejected</option>
-            </select>
-        </div>        
-    </div>
 
-    <table class="table" id="po-table">
-        <thead>
-            <tr class="table-header">
-                <th>Line Id</th>
-                <th>Product</th>
-                <th>Order Qty</th>
-                <th>Status</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order_line in order_lines %}
-            <tr class="po-row" data-status="{{ order_line.status }}">
-                <td>{{ order_line.po_line_id }}</td>
-                <td>{{ order_line.product_name }}</td>
-                <td>{{ order_line.quantity_ordered }}</td>
-                <td>{{ order_line.status }}</td>
-                <td><button class="btn btn-sm btn-outline-primary collapsible">▼</button></td>
-            </tr>
-            <tr class="expandable-row">
-                <td colspan="5">
-                    <div class="expanded-row">
-                        <label>Invoice Qty:</label>
-                        <input type="number" class="form-control invoice-qty" value="{{ order_line.quantity_invoice }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
-                        <label>Received Qty:</label>
-                        <input type="number" class="form-control received-qty" value="{{ order_line.quantity_received }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
-                        <label>Accepted Qty:</label>
-                        <input type="number" class="form-control accepted-qty" value="{{ order_line.quantity_accepted }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
-                        <label>Rejected Qty:</label>
-                        <input type="number" class="form-control rejected-qty" value="{{ order_line.quantity_rejected }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
-                        <label>Priority:</label>
-                        <select class="form-control priority-select" {% if order_line.status != 'Open' %}disabled{% endif %}>
-                            <option value="">Select</option>
-                            <option value="Critical" {% if order_line.priority == "Critical" %}selected{% endif %}>Critical</option>
-                            <option value="Non Critical" {% if order_line.priority == "Non Critical" %}selected{% endif %}>Non Critical</option>
-                            <option value="Excess" {% if order_line.priority == "Excess" %}selected{% endif %}>Excess</option>
-                            <option value="Shortage" {% if order_line.priority == "Shortage" %}selected{% endif %}>Shortage</option>
-                            <option value="No issue" {% if order_line.priority == "No issue" %}selected{% endif %}>No issue</option>
-                        </select>
-                        <label>Notes:</label>
-                        <input type="text" class="form-control notes" value="{{ order_line.notes }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
-                        <button class="btn btn-success btn-ok" {% if order_line.status != 'Open' %}disabled{% endif %}>OK</button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <table class="table" id="po-table">
+            <thead>
+                <tr class="table-header">
+                    <th>Line Id</th>
+                    <th>Product</th>
+                    <th>Order Qty</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order_line in order_lines %}
+                <tr class="po-row" data-status="{{ order_line.status }}">
+                    <td>{{ order_line.po_line_id }}</td>
+                    <td>{{ order_line.product_name }}</td>
+                    <td>{{ order_line.quantity_ordered }}</td>
+                    <td>{{ order_line.status }}</td>
+                    <td><button class="btn btn-sm btn-outline-primary collapsible">▼</button></td>
+                </tr>
+                <tr class="expandable-row">
+                    <td colspan="5">
+                        <div class="expanded-row">
+                            <label>Invoice Qty:</label>
+                            <input type="number" class="form-control invoice-qty" value="{{ order_line.quantity_invoice }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                            <label>Received Qty:</label>
+                            <input type="number" class="form-control received-qty" value="{{ order_line.quantity_received }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                            <label>Accepted Qty:</label>
+                            <input type="number" class="form-control accepted-qty" value="{{ order_line.quantity_accepted }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                            <label>Rejected Qty:</label>
+                            <input type="number" class="form-control rejected-qty" value="{{ order_line.quantity_rejected }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                            <label>Priority:</label>
+                            <select class="form-control priority-select" {% if order_line.status != 'Open' %}disabled{% endif %}>
+                                <option value="">Select</option>
+                                <option value="Critical" {% if order_line.priority == "Critical" %}selected{% endif %}>Critical</option>
+                                <option value="Non Critical" {% if order_line.priority == "Non Critical" %}selected{% endif %}>Non Critical</option>
+                                <option value="Excess" {% if order_line.priority == "Excess" %}selected{% endif %}>Excess</option>
+                                <option value="Shortage" {% if order_line.priority == "Shortage" %}selected{% endif %}>Shortage</option>
+                                <option value="No issue" {% if order_line.priority == "No issue" %}selected{% endif %}>No issue</option>
+                            </select>
+                            <label>Notes:</label>
+                            <input type="text" class="form-control notes" value="{{ order_line.notes }}" {% if order_line.status != 'Open' %}readonly{% endif %}>
+                            <button class="btn btn-success btn-ok" {% if order_line.status != 'Open' %}disabled{% endif %}>OK</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>

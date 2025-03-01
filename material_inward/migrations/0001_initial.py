@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('notes', models.TextField(blank=True, null=True)),
             ],
             options={
-                'db_table': '"pos_dev".Po_Order_Lines',
+                'db_table': '"pos_dev"."po_order_lines"',
             },
         ),
     ]
