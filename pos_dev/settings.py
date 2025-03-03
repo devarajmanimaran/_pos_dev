@@ -41,8 +41,13 @@ INSTALLED_APPS = [
     'putaway',
     'material_inward',
     'billing',
+<<<<<<< Updated upstream
     'purchase_order',
     'pricing',
+=======
+    'wkhtmltopdf',
+    'pricing.apps.PricingConfig',  # Keep only this one, remove the duplicate 'pricing'
+>>>>>>> Stashed changes
 ]
 
 MIDDLEWARE = [
@@ -111,12 +116,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
+# Datetime settings
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = False  # Changed to False to use system time without timezone conversion
+USE_L10N = False
+DATETIME_FORMAT = 'Y-m-d H:i:s'
+DATE_FORMAT = 'Y-m-d'
+TIME_FORMAT = 'H:i:s'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -134,12 +140,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'supermarket_pos',
         'USER': 'admin_user',
-        'ROLE': 'db_admin',
-        'PASSWORD': 'admin2025',
+        'PASSWORD': 'admin2025',  # Fixed the password format
         'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
-            'options': '-c search_path=pos_dev',
-        }
+            'options': '-c search_path=pos_dev,public'
+        },
+        'SCHEMA': 'pos_dev'
     }
 }
+
+DATABASE_ROUTERS = ['pricing.router.PricingRouter']

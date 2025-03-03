@@ -7,6 +7,6 @@ urlpatterns = [
     path('', views.price_history, name='pricing_index'),
     path('history/', views.price_history, name='price_history'),
     path('update/', views.update_price, name='update_price'),
-    path('excel/download/', views.download_excel, name='download_excel'),
+    path('excel/download/', views.download_excel, name='download_excel'),  # Make sure this exists
     path('excel/upload/', views.upload_excel, name='upload_excel'),
 ]

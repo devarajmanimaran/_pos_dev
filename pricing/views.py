@@ -1,12 +1,17 @@
 from django.shortcuts import render
-from django.db import connection
 from django.http import JsonResponse, HttpResponse
+from django.db.models import Q, F, Value, CharField, DecimalField, Window
+from django.db.models.functions import Coalesce, RowNumber, Cast
+from django.db.models.expressions import OrderBy
 from datetime import datetime
 import json
-import pytz  # Add this import at the top
+import pytz
 import pandas as pd
-from openpyxl import Workbook
-from io import BytesIO
+from io import BytesIO  # Add this import
+from .models import Product, PriceMaster, PricingHistory, GST
+from .forms import PriceUpdateForm, ProductUpdateForm
+from django.core.paginator import Paginator
+from django.db import connection  # Add this import if not already present
 
 def price_history(request):
     try:
@@ -17,144 +22,95 @@ def price_history(request):
         end_date = request.GET.get('end_date', '')
         page = int(request.GET.get('page', 1))
         per_page = 100
-        
-        # Flag to indicate if we're showing historical data
-        is_historical = bool(start_date and end_date)
-        
-        # Base query for count
-        count_query = '''
-        SELECT COUNT(*) 
-        FROM pos_dev.price_master pm
-        LEFT JOIN pos_dev.product p ON pm.product_id = p.Product_ID
-        WHERE 1=1
-        '''
-        
-        # Base query for data
-        query = '''
-        SELECT 
-            ROW_NUMBER() OVER (ORDER BY pm.product_id) as Serial_No,
-            pm.Product_ID,
-            COALESCE(p.Product_Name, 'N/A') as Product_Name,
-            COALESCE(p.Category_ID, 'N/A') as Category_ID,
-            COALESCE(g.CGST, 0) as CGST,
-            COALESCE(g.SGST, 0) as SGST,
-            pm.Unit_Cost,
-            pm.Unit_Price,
-            pm.Discount_Price,
-            NULL as Discount_Price_Old,
-            pm.Added_By,
-            pm.Modified_By,
-            TO_CHAR(pm.Updated_On, 'DD-MM-YYYY HH24:MI:SS') as Updated_On,
-            'current' as data_type
-        FROM pos_dev.price_master pm
-        LEFT JOIN pos_dev.product p ON pm.product_id = p.Product_ID
-        LEFT JOIN pos_dev.gst g ON p.Category_ID = g.Category_ID
-        WHERE 1=1
-        '''
-        
-        count_params = []
-        params = []
 
-        # Exact match for Product ID
+        # Updated base queryset with proper category_id handling
+        queryset = PriceMaster.objects.select_related(
+            'product', 
+            'product__category_id'
+        ).annotate(
+            serial_no=Window(
+                expression=RowNumber(),
+                order_by=F('product__product_id').asc()
+            ),
+            product_name=F('product__product_name'),
+            category_id=Cast(
+                'product__category_id__category_id',
+                output_field=CharField()
+            ),
+            cgst=Coalesce(
+                Cast('product__category_id__cgst', DecimalField(max_digits=10, decimal_places=2)),
+                Value(0),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            ),
+            sgst=Coalesce(
+                Cast('product__category_id__sgst', DecimalField(max_digits=10, decimal_places=2)),
+                Value(0),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            ),
+            data_type=Value('current', CharField())
+        )
+
+        # Apply filters
         if product_id:
-            query += " AND pm.Product_ID = %s"
-            count_query += " AND pm.Product_ID = %s"
-            params.append(product_id)
-            count_params.append(product_id)
-
-        # Exact match for Category ID
-        if category_id:
-            query += " AND p.Category_ID = %s"
-            count_query += " AND p.Category_ID = %s"
-            params.append(category_id)
-            count_params.append(category_id)
-
-        # LIKE match for Product Name
+            queryset = queryset.filter(product_id=product_id)
         if product_name:
-            query += " AND p.Product_Name ILIKE %s"
-            count_query += " AND p.Product_Name ILIKE %s"
-            params.append(f'%{product_name}%')
-            count_params.append(f'%{product_name}%')
-        
-        with connection.cursor() as cursor:
-            cursor.execute(count_query, count_params)
-            total_records = cursor.fetchone()[0]
-        
-        # Calculate total pages
-        total_pages = (total_records + per_page - 1) // per_page
-        
-        # Ensure page is within bounds
-        page = max(1, min(page, total_pages))
-        
-        # Calculate offset
-        offset = (page - 1) * per_page
-        
-        # Switch to historical view if date range is provided
-        if is_historical:
-            query = query.replace('price_master pm', 'pricing_history ph')
-            query = query.replace('pm.', 'ph.')
-            query = query.replace("'current' as data_type", "'historical' as data_type")
-            query = query.replace(
-                "CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'", 
-                "ph.Updated_On AT TIME ZONE 'Asia/Kolkata'"
+            queryset = queryset.filter(product__product_name__icontains=product_name)
+        if category_id:
+            # Clean the category ID from both input and database values for comparison
+            clean_category_id = category_id.split('.')[0] if '.' in category_id else category_id
+            queryset = queryset.filter(
+                Q(product__category_id__category_id__exact=clean_category_id) |
+                Q(product__category_id__category_id__exact=f"{clean_category_id}.0")
             )
-            query += " AND DATE(ph.Updated_On) BETWEEN %s AND %s"
-            params.extend([start_date, end_date])
-        
-        query += " ORDER BY Product_ID LIMIT %s OFFSET %s"
-        params.extend([per_page, offset])
-        
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            columns = [col[0] for col in cursor.description]
-            prices = [dict(zip(columns, row)) for row in cursor.fetchall()]
-            
-            pagination = {
-                'current_page': page,
-                'total_pages': total_pages,
-                'total_records': total_records,
+
+        # Switch to historical view if date range provided
+        is_historical = bool(start_date and end_date)
+        if is_historical:
+            queryset = PricingHistory.objects.select_related('product').filter(
+                updated_on__date__range=[start_date, end_date]
+            ).annotate(data_type=Value('historical', CharField()))
+
+        # Pagination
+        paginator = Paginator(queryset.order_by('product_id'), per_page)
+        page_obj = paginator.get_page(page)
+
+        return render(request, 'pricing/history.html', {
+            'prices': page_obj,
+            'product_id': product_id,
+            'product_name': product_name,
+            'category_id': category_id,
+            'start_date': start_date,
+            'end_date': end_date,
+            'is_historical': is_historical,
+            'pagination': {
+                'current_page': page_obj.number,
+                'total_pages': paginator.num_pages,
+                'total_records': paginator.count,
                 'per_page': per_page,
-                'has_previous': page > 1,
-                'has_next': page < total_pages,
-                'showing_start': offset + 1,
-                'showing_end': min(offset + per_page, total_records)
+                'has_previous': page_obj.has_previous(),
+                'has_next': page_obj.has_next(),
+                'showing_start': (page_obj.number - 1) * per_page + 1,
+                'showing_end': min(page_obj.number * per_page, paginator.count)
             }
-            
-            return render(request, 'pricing/history.html', {
-                'prices': prices,
-                'product_id': product_id,
-                'product_name': product_name,
-                'category_id': category_id,
-                'start_date': start_date,
-                'end_date': end_date,
-                'is_historical': is_historical,
-                'pagination': pagination
-            })
-            
+        })
+
     except Exception as e:
-        print(f"Database error in price_history: {str(e)}")
-        return JsonResponse({
-            'error': f'Failed to fetch price history: {str(e)}'
-        }, status=500)
+        return JsonResponse({'error': str(e)}, status=500)
 
 def update_price(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
-    
+
     try:
         updates = json.loads(request.body)
-        print("Received updates:", updates)  # Debug log
-        
         if not isinstance(updates, list):
             updates = [updates]
 
         success_count = 0
         errors = []
-        
-        # Get current IST timestamp
         ist = pytz.timezone('Asia/Kolkata')
-        current_timestamp = datetime.now(ist).replace(tzinfo=None)
-        
+        current_timestamp = datetime.now(ist)
+
         for data in updates:
             try:
                 product_id = data.get('product_id')
@@ -162,97 +118,69 @@ def update_price(request):
                     errors.append('Product ID is required')
                     continue
 
-                with connection.cursor() as cursor:
-                    # First verify product exists
-                    check_query = '''
-                    SELECT Product_ID FROM pos_dev.product WHERE Product_ID = %s
-                    '''
-                    cursor.execute(check_query, [product_id])
-                    if not cursor.fetchone():
-                        errors.append(f'Product {product_id} not found')
-                        continue
+                # Clean up the input data
+                cleaned_data = {
+                    'product_id': product_id,
+                    'product_name': data.get('product_name', '').strip(),
+                    'category_id': data.get('category_id', '').strip(),
+                    'discount_price': data.get('discount_price', '').strip().replace('₹', '').replace(',', '')
+                }
 
-                    changes_made = False
+                product = Product.objects.filter(product_id=product_id).first()
+                if not product:
+                    errors.append(f'Product {product_id} not found')
+                    continue
 
-                    # Handle product name and category updates
-                    if 'product_name' in data or 'category_id' in data:
-                        product_update_query = '''
-                        UPDATE pos_dev.product 
-                        SET Product_Name = COALESCE(%s, Product_Name),
-                            Category_ID = COALESCE(%s, Category_ID)
-                        WHERE Product_ID = %s
-                        '''
-                        cursor.execute(product_update_query, [
-                            data.get('product_name'),
-                            data.get('category_id'),
-                            product_id
-                        ])
+                changes_made = False
+
+                # Handle product updates
+                if cleaned_data['product_name'] or cleaned_data['category_id']:
+                    update_data = {}
+                    if cleaned_data['product_name']:
+                        update_data['product_name'] = cleaned_data['product_name']
+                    if cleaned_data['category_id']:
+                        update_data['category_id'] = cleaned_data['category_id']
+                    
+                    if update_data:
+                        Product.objects.filter(product_id=product_id).update(**update_data)
                         changes_made = True
 
-                    # Handle discount price update
-                    if 'discount_price' in data:
-                        # Get current pricing info before making changes
-                        current_price_query = '''
-                        SELECT Unit_Cost, Unit_Price, Discount_Price 
-                        FROM pos_dev.price_master 
-                        WHERE Product_ID = %s
-                        '''
-                        cursor.execute(current_price_query, [product_id])
-                        current_price = cursor.fetchone()
+                # Handle price updates
+                if cleaned_data['discount_price']:
+                    try:
+                        new_price = float(cleaned_data['discount_price'])
+                        price_master = PriceMaster.objects.get(product_id=product_id)
+                        
+                        if new_price != price_master.discount_price:
+                            # Create history record
+                            PricingHistory.objects.create(
+                                history_id=f"PH_{product_id}_{current_timestamp.strftime('%Y%m%d%H%M%S')}",
+                                product=product,
+                                unit_cost=price_master.unit_cost,
+                                unit_price=price_master.unit_price,
+                                discount_price=new_price,
+                                discount_price_old=price_master.discount_price,
+                                updated_on=current_timestamp,
+                                added_by='admin',
+                                modified_by='admin'
+                            )
 
-                        if current_price:
-                            discount_price = float(data['discount_price'].replace('₹', '').strip())
-                            history_id = f"PH_{product_id}_{current_timestamp.strftime('%Y%m%d%H%M%S')}"
-
-                            # First save to pricing_history
-                            price_history_query = '''
-                            INSERT INTO pos_dev.pricing_history 
-                            (history_id, product_id, unit_cost, unit_price, 
-                             discount_price, discount_price_old, updated_on, 
-                             added_by, modified_by)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            '''
-                            cursor.execute(price_history_query, [
-                                history_id,
-                                product_id,
-                                current_price[0],  # Unit_Cost
-                                current_price[1],  # Unit_Price
-                                discount_price,
-                                current_price[2],  # Old Discount_Price
-                                current_timestamp,
-                                'admin',
-                                'admin'
-                            ])
-
-                            # Then update price_master
-                            update_master_query = '''
-                            UPDATE pos_dev.price_master 
-                            SET discount_price = %s,
-                                modified_by = %s,
-                                updated_on = %s
-                            WHERE product_id = %s
-                            '''
-                            cursor.execute(update_master_query, [
-                                discount_price,
-                                'admin',
-                                current_timestamp,
-                                product_id
-                            ])
+                            # Update price master
+                            price_master.discount_price = new_price
+                            price_master.modified_by = 'admin'
+                            price_master.updated_on = current_timestamp
+                            price_master.save()
                             changes_made = True
-                        else:
-                            errors.append(f'No pricing info found for product {product_id}')
-                            continue
+                    except ValueError:
+                        errors.append(f"Invalid price format for product {product_id}")
+                        continue
 
-                    if changes_made:
-                        success_count += 1
-                        connection.commit()
-                    else:
-                        errors.append(f'No changes detected for product {product_id}')
+                if changes_made:
+                    success_count += 1
 
             except Exception as e:
-                print(f"Error updating product {product_id}: {str(e)}")
                 errors.append(f'Error updating product {product_id}: {str(e)}')
-                connection.rollback()
+                continue
 
         if success_count > 0:
             return JsonResponse({
@@ -268,7 +196,7 @@ def update_price(request):
             }, status=400)
 
     except Exception as e:
-        print(f"Error in update_price: {str(e)}")
+        print(f"Update error: {str(e)}")
         return JsonResponse({
             'error': f'Failed to process updates: {str(e)}',
             'success': False
@@ -276,80 +204,39 @@ def update_price(request):
 
 def download_excel(request):
     try:
-        # Get filter parameters from query string
-        product_id = request.GET.get('product_id', '')
-        product_name = request.GET.get('product_name', '')
-        category_id = request.GET.get('category_id', '')
-        start_date = request.GET.get('start_date', '')
-        end_date = request.GET.get('end_date', '')
+        # Get filter parameters
+        filters = {
+            'product_id': request.GET.get('product_id', ''),
+            'product_name': request.GET.get('product_name', ''),
+            'category_id': request.GET.get('category_id', '')
+        }
+        filters = {k: v for k, v in filters.items() if v}  # Remove empty filters
         
-        # Base query for current prices
-        query = '''
-        SELECT 
-            p.Product_ID,
-            p.Product_Name,
-            p.Category_ID,
-            COALESCE(g.CGST, 0) as CGST,
-            COALESCE(g.SGST, 0) as SGST,
-            pm.Unit_Cost,
-            pm.Unit_Price,
-            pm.Discount_Price,
-            pm.Updated_On
-        FROM pos_dev.price_master pm
-        LEFT JOIN pos_dev.product p ON pm.product_id = p.Product_ID
-        LEFT JOIN pos_dev.gst g ON p.Category_ID = g.Category_ID
-        WHERE 1=1
-        '''
+        # Get data using ORM
+        queryset = PriceMaster.objects.get_product_details(filters)
         
-        params = []
-        
-        # Exact match for Product ID
-        if product_id:
-            query += " AND p.Product_ID = %s"
-            params.append(product_id)
-            
-        # Exact match for Category ID
-        if category_id:
-            query += " AND p.Category_ID = %s"
-            params.append(category_id)
-            
-        # LIKE match for Product Name
-        if product_name:
-            query += " AND p.Product_Name ILIKE %s"
-            params.append(f'%{product_name}%')
-        
-        # Date range if provided
-        if start_date and end_date:
-            query += " AND DATE(pm.Updated_On) BETWEEN %s AND %s"
-            params.extend([start_date, end_date])
-            
-        query += " ORDER BY p.Product_ID"
-        
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            
-        # Create DataFrame with all columns
-        df = pd.DataFrame(rows, columns=[
-            'Product ID', 'Product Name', 'Category ID', 
-            'CGST (%)', 'SGST (%)', 'Unit Cost', 
-            'Unit Price', 'Discount Price', 'Last Updated'
-        ])
-        
-        # Format currency columns
-        currency_columns = ['Unit Cost', 'Unit Price', 'Discount Price']
-        for col in currency_columns:
-            df[col] = df[col].apply(lambda x: f'₹ {x:,.2f}')
-        
-        # Format percentage columns
-        percentage_columns = ['CGST (%)', 'SGST (%)']
-        for col in percentage_columns:
-            df[col] = df[col].apply(lambda x: f'{x}%')
+        # Create DataFrame
+        data = [{
+            'Product ID': item.product.product_id,
+            'Product Name': item.product.product_name,
+            'Category ID': item.product.category_id.category_id if item.product.category_id else '',
+            'CGST (%)': item.cgst,
+            'SGST (%)': item.sgst,
+            'Unit Cost': item.unit_cost,
+            'Unit Price': item.unit_price,
+            'Discount Price': item.discount_price,
+            'Added By': item.added_by,
+            'Modified By': item.modified_by,
+            'Last Updated': item.updated_on.strftime('%Y-%m-%d %H:%M:%S')
+        } for item in queryset]
+
+        if not data:
+            return JsonResponse({'error': 'No data found'}, status=404)
+
+        df = pd.DataFrame(data)
         
         # Create Excel file
         output = BytesIO()
-        
-        # Create Excel writer with datetime formatting
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Price Master')
             
@@ -358,34 +245,26 @@ def download_excel(request):
             for idx, col in enumerate(df.columns):
                 max_length = max(
                     df[col].astype(str).apply(len).max(),
-                    len(col)
+                    len(str(col))
                 ) + 2
                 worksheet.column_dimensions[chr(65 + idx)].width = max_length
-        
+
         output.seek(0)
-        
-        # Generate filename with current filters
-        filename_parts = ['price_data']
-        if product_id:
-            filename_parts.append(f'pid_{product_id}')
-        if category_id:
-            filename_parts.append(f'cat_{category_id}')
-        if product_name:
-            filename_parts.append('filtered')
-        filename_parts.append(datetime.now().strftime('%Y%m%d'))
-        
-        filename = '_'.join(filename_parts) + '.xlsx'
         
         response = HttpResponse(
             output.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'attachment; filename=price_master_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         return response
-        
+
     except Exception as e:
+        import traceback
         print(f"Excel download error: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        print(traceback.format_exc())
+        return JsonResponse({
+            'error': f'Excel download failed: {str(e)}'
+        }, status=500)
 
 def upload_excel(request):
     if request.method != 'POST':
@@ -394,90 +273,77 @@ def upload_excel(request):
     try:
         excel_file = request.FILES['file']
         df = pd.read_excel(excel_file)
-
-        # Required columns
-        required_columns = ['Product ID']
-        optional_columns = ['Product Name', 'Category ID', 'Discount Price']
         
-        # Check required columns
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            return JsonResponse({
-                'error': f'Missing required columns: {", ".join(missing_columns)}'
-            }, status=400)
-
+        # Validate columns
+        required_columns = ['Product ID']
+        if not all(col in df.columns for col in required_columns):
+            return JsonResponse({'error': 'Missing required columns'}, status=400)
+        
         changes = []
         errors = []
         
-        with connection.cursor() as cursor:
-            for index, row in df.iterrows():
-                try:
-                    # Convert product_id to string and clean it
-                    product_id = str(row['Product ID']).strip()
-                    
-                    # Get current product info
-                    cursor.execute("""
-                        SELECT 
-                            p.product_id,
-                            p.product_name,
-                            p.category_id,
-                            pm.unit_cost,
-                            pm.unit_price,
-                            pm.discount_price
-                        FROM pos_dev.product p
-                        LEFT JOIN pos_dev.price_master pm ON p.product_id = pm.product_id
-                        WHERE p.product_id = %s
-                    """, [product_id])
-                    
-                    result = cursor.fetchone()
-                    if result:
-                        current_data = {
-                            'product_id': result[0],
-                            'product_name': result[1],
-                            'category_id': result[2],
-                            'unit_cost': result[3],
-                            'unit_price': result[4],
-                            'discount_price': float(result[5]) if result[5] else 0
-                        }
-                        
-                        change = {
-                            'product_id': product_id,
-                            'current': current_data,
-                            'new': {},
-                            'changes': []
-                        }
-                        
-                        # Check each column for changes
-                        if 'Product Name' in df.columns and not pd.isna(row['Product Name']):
-                            new_name = str(row['Product Name']).strip()
-                            if new_name != current_data['product_name']:
-                                change['new']['product_name'] = new_name
-                                change['changes'].append('Product Name')
-                        
-                        if 'Category ID' in df.columns and not pd.isna(row['Category ID']):
-                            new_category = str(row['Category ID']).strip()
-                            if new_category != current_data['category_id']:
-                                change['new']['category_id'] = new_category
-                                change['changes'].append('Category')
-                        
-                        if 'Discount Price' in df.columns and not pd.isna(row['Discount Price']):
-                            try:
-                                new_price = float(row['Discount Price'])
-                                if new_price != current_data['discount_price']:
-                                    change['new']['discount_price'] = new_price
-                                    change['changes'].append('Price')
-                            except ValueError:
-                                errors.append(f"Invalid price format for product {product_id}")
-                                continue
-                        
-                        if change['changes']:
-                            changes.append(change)
-                    else:
-                        errors.append(f"Product not found: {product_id}")
+        # Get current data using ORM
+        product_ids = df['Product ID'].astype(str).tolist()
+        current_records = {
+            str(p.product.product_id): {
+                'product_id': p.product.product_id,
+                'product_name': p.product.product_name,
+                'category_id': p.product.category_id.category_id if p.product.category_id else None,
+                'discount_price': float(p.discount_price)
+            }
+            for p in PriceMaster.objects.select_related(
+                'product', 
+                'product__category_id'
+            ).filter(product__product_id__in=product_ids)
+        }
+        
+        # Process changes
+        for _, row in df.iterrows():
+            product_id = str(row['Product ID']).strip()
+            if product_id not in current_records:
+                errors.append(f"Product not found: {product_id}")
+                continue
                 
-                except Exception as e:
-                    errors.append(f"Error processing row {index + 1}: {str(e)}")
+            current = current_records[product_id]
+            change = {
+                'product_id': product_id,
+                'current': current,
+                'new': {},
+                'changes': []
+            }
+            
+            # Improved category ID comparison
+            if 'Category ID' in df.columns and not pd.isna(row['Category ID']):
+                new_category = str(row['Category ID']).strip()
+                current_category = str(current['category_id']) if current['category_id'] else ''
+                
+                if new_category and new_category != current_category:
+                    change['new']['category_id'] = new_category
+                    change['changes'].append('Category')
+            
+            # Check for changes
+            if 'Product Name' in df.columns and not pd.isna(row['Product Name']):
+                new_name = str(row['Product Name']).strip()
+                if new_name != current['product_name']:
+                    change['new']['product_name'] = new_name
+                    change['changes'].append('Product Name')
+            
+            if 'Discount Price' in df.columns and not pd.isna(row['Discount Price']):
+                try:
+                    new_price = float(row['Discount Price'])
+                    if new_price != current['discount_price']:
+                        change['new']['discount_price'] = new_price
+                        change['changes'].append('Price')
+                except ValueError:
+                    errors.append(f"Invalid price format for product {product_id}")
                     continue
+            
+            if change['changes']:
+                changes.append(change)
+
+        # Apply changes using bulk operations
+        if changes:
+            success_count = PriceMaster.objects.bulk_update_prices(changes)
         
         # Generate summary
         summary = {

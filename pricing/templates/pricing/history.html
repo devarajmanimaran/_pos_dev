@@ -709,11 +709,11 @@
             </thead>
             <tbody>
                 {% for price in prices %}
-                <tr data-product-id="{{ price.product_id }}">
+                <tr data-product-id="{{ price.product.product_id }}">
                     <td class="table-value">{{ price.serial_no }}</td>
-                    <td class="table-value">{{ price.product_id }}</td>
+                    <td class="table-value">{{ price.product.product_id }}</td>
                     <td class="table-value editable" data-field="product_name">{{ price.product_name }}</td>
-                    <td class="table-value editable" data-field="category_id">{{ price.category_id }}</td>
+                    <td class="table-value editable" data-field="category_id">{{ price.category_id|cut:".0" }}</td>
                     <td class="table-percentage">{{ price.cgst }}%</td>
                     <td class="table-percentage">{{ price.sgst }}%</td>
                     <td class="table-price">₹ {{ price.unit_cost }}</td>
@@ -721,7 +721,7 @@
                     <td class="table-price editable" data-field="discount_price">₹ {{ price.discount_price }}</td>
                     <td class="table-value">{{ price.added_by }}</td>
                     <td class="table-value">{{ price.modified_by }}</td>
-                    <td class="table-date">{{ price.updated_on }}</td>
+                    <td class="table-date">{{ price.updated_on|date:"Y-m-d H:i:s" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -822,7 +822,14 @@
             if (isEditMode) {
                 const value = cell.textContent.replace('₹', '').trim();
                 const field = cell.dataset.field;
-                cell.innerHTML = `<input type="text" value="${value}" data-original="${value}" data-field="${field}">`;
+                const originalValue = value;
+                cell.innerHTML = `
+                    <input type="text" 
+                           value="${value}" 
+                           data-original="${originalValue}" 
+                           data-field="${field}"
+                           class="editable-input">
+                `;
             } else {
                 const input = cell.querySelector('input');
                 if (input) {
@@ -927,16 +934,15 @@
 
     async function downloadExcel() {
         try {
-            const baseUrl = "{% url 'pricing:pricing_index' %}";
             const params = new URLSearchParams({
-                product_id: productIdInput.value || '',
-                product_name: productNameInput.value || '',
-                category_id: categoryIdInput.value || '',
-                start_date: startDateInput.value || '',
-                end_date: endDateInput.value || ''
+                product_id: document.getElementById('product_id').value || '',
+                product_name: document.getElementById('product_name').value || '',
+                category_id: document.getElementById('category_id').value || '',
+                start_date: document.getElementById('start_date').value || '',
+                end_date: document.getElementById('end_date').value || ''
             });
 
-            const downloadUrl = `${baseUrl}excel/download/?${params.toString()}`;
+            const downloadUrl = "{% url 'pricing:download_excel' %}?" + params.toString();
             
             const response = await fetch(downloadUrl, {
                 method: 'GET',
@@ -945,18 +951,23 @@
                 }
             });
 
-            if (!response.ok) throw new Error('Download failed');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Download failed');
+            }
             
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `price_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+            a.download = `price_master_${new Date().toISOString().slice(0,10)}.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
+            
         } catch (error) {
+            console.error('Download error:', error);
             alert('Failed to download Excel: ' + error.message);
         }
     }
