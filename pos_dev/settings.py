@@ -41,10 +41,7 @@ INSTALLED_APPS = [
     'putaway',
     'material_inward',
     'billing',
-<<<<<<< Updated upstream
     'purchase_order',
-    'pricing',
-=======
     'wkhtmltopdf',
     'pricing.apps.PricingConfig',  # Keep only this one, remove the duplicate 'pricing'
 ]
