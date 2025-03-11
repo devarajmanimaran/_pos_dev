@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'material_inward',
     'billing',
     'purchase_order',
-    'wkhtmltopdf',
+    # 'wkhtmltopdf',
     'pricing.apps.PricingConfig',  # Keep only this one, remove the duplicate 'pricing'
 ]
 

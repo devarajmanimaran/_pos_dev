@@ -14,7 +14,7 @@ def material_inward(request):
     query = """
     select po_number
         po_header_id,
-        order_date,
+        to_date(order_date::TEXT, 'YYYY-MM-DD') as order_date,
         status,
         supplier_id
         from pos_dev.Po_Order_Headers
