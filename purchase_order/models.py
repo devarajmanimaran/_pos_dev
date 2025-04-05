@@ -93,7 +93,7 @@ class POOrderHeader(models.Model):
     status = models.CharField(max_length=50)
     reference_number = models.IntegerField()
     shipped_by = models.CharField(max_length=255)
-    shippment_reference = models.CharField(max_length=255)
+    shippment_preference = models.CharField(max_length=255)
     created_by = models.IntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     updated_by = models.IntegerField(null=True, blank=True)
@@ -113,7 +113,7 @@ class POOrderLines(models.Model):
     po_line_num = models.DecimalField(max_digits=10, decimal_places=1)
     po_header_id = models.IntegerField()
     po_number = models.CharField(max_length=50)
-    product_id = models.IntegerField()
+    product_id = models.CharField(max_length=120)
     product_name = models.CharField(max_length=255)
     priority = models.CharField(max_length=120)
     quantity_ordered = models.IntegerField()
@@ -130,3 +130,38 @@ class POOrderLines(models.Model):
     class Meta:
         db_table = '"pos_dev"."po_order_lines"'  # This explicitly tells Django to use "po_order_lines" table
         managed = False  # Since the table already exists
+
+class PODrafts(models.Model):
+    draft_id = models.AutoField(primary_key=True)
+    status = models.CharField(max_length=50, default='Draft')
+    # Supplier details
+    supplier_name = models.CharField(max_length=255)
+    supplier_address = models.CharField(max_length=255)
+    supplier_city = models.CharField(max_length=255)
+    supplier_region = models.CharField(max_length=255)
+    supplier_phone_number = models.CharField(max_length=255)
+    supplier_payment_terms = models.CharField(max_length=255)
+    # Store details
+    store_name = models.CharField(max_length=255)
+    store_address = models.CharField(max_length=255)
+    store_city = models.CharField(max_length=255)
+    store_region = models.CharField(max_length=255)
+    store_phone_number = models.CharField(max_length=255)
+    # Order details
+    reference_number = models.IntegerField(null=True)
+    ordered_date = models.DateTimeField(null=True)
+    expected_delivery_date = models.DateTimeField(null=True)
+    shipped_by = models.CharField(max_length=255)
+    shippment_preference = models.CharField(max_length=255)
+    notes = models.CharField(max_length=255, null=True)
+    # Product and cost details
+    product_details = models.JSONField()
+    cost_summary = models.JSONField()
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2)
+    other_adjustments = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        db_table = 'po_drafts'
+        managed = False

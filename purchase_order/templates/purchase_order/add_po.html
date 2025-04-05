@@ -542,6 +542,103 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('store-region').value = store.region;
         document.getElementById('store-phone').value = store.phone_number;
     }
+
+    // Check if draft data exists and restore it
+    {% if draft_data %}
+        const draftData = JSON.parse('{{ draft_data|escapejs|safe }}');
+        console.log('Loaded draft data:', draftData);  // Debug log
+        
+        // Restore supplier details - first find and select the matching supplier
+        const supplierSelect = document.getElementById('supplier-name');
+        Array.from(supplierSelect.options).forEach(option => {
+            if (option.text === draftData.supplier_name) {
+                option.selected = true;
+                // Trigger change event to load supplier products
+                supplierSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Restore supplier details
+        document.getElementById('supplier-address').value = draftData.supplier_address || '';
+        document.getElementById('supplier-city').value = draftData.supplier_city || '';
+        document.getElementById('supplier-region').value = draftData.supplier_region || '';
+        document.getElementById('supplier-phone').value = draftData.supplier_phone || '';
+        document.getElementById('supplier-payment-terms').value = draftData.supplier_payment_terms || '';
+
+        // Restore store details - first find and select the matching store
+        const storeSelect = document.getElementById('store-name');
+        Array.from(storeSelect.options).forEach(option => {
+            if (option.text === draftData.store_name) {
+                option.selected = true;
+                // Trigger change event
+                storeSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Restore store details
+        document.getElementById('store-address').value = draftData.store_address || '';
+        document.getElementById('store-city').value = draftData.store_city || '';
+        document.getElementById('store-region').value = draftData.store_region || '';
+        document.getElementById('store-phone').value = draftData.store_phone || '';
+
+        // Restore order details
+        document.getElementById('reference-number').value = draftData.reference_number || '';
+        document.getElementById('ordered-date').value = draftData.ordered_date || '';
+        document.getElementById('expected-delivery-date').value = draftData.expected_delivery_date || '';
+        document.getElementById('shipped-by').value = draftData.shipped_by || 'None';
+        document.getElementById('shipment-preference').value = draftData.shipment_preference || 'None';
+        document.getElementById('notes').value = draftData.notes || '';
+
+        // Clear existing products
+        clearTable();
+
+        // Wait for supplier products to load before restoring product details
+        setTimeout(() => {
+            // Restore product details
+            if (Array.isArray(draftData.product_details)) {
+                draftData.product_details.forEach((product, index) => {
+                    if (index > 0) addEmptyRow();
+                    const rows = document.querySelectorAll('#product-table tbody tr');
+                    const currentRow = rows[index];
+                    
+                    if (currentRow) {
+                        const productSelect = currentRow.querySelector('.product-name');
+                        Array.from(productSelect.options).forEach(option => {
+                            if (option.text === product.name) {
+                                option.selected = true;
+                                productSelect.dispatchEvent(new Event('change'));
+                            }
+                        });
+                        currentRow.querySelector('.product-quantity').value = product.quantity || '';
+                    }
+                });
+            }
+
+            // Restore cost summary
+            if (Array.isArray(draftData.cost_summary)) {
+                const costTable = document.getElementById('cost-summary-table').getElementsByTagName('tbody')[0];
+                draftData.cost_summary.forEach(item => {
+                    const newRow = costTable.insertRow();
+                    newRow.innerHTML = `
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.unit_cost}</td>
+                        <td>${item.tax}</td>
+                        <td>${item.subtotal}</td>
+                    `;
+                });
+            }
+
+            // Restore additional costs
+            document.getElementById('shipping-cost').value = draftData.shipping_cost || 0;
+            document.getElementById('discounts').value = draftData.discount || 0;
+            document.getElementById('other-adjustments').value = draftData.other_adjustments || 0;
+            document.getElementById('total-amount').value = draftData.total_amount || 0;
+
+            // Update totals
+            updateTotal();
+        }, 500);  // Wait 500ms for supplier products to load
+    {% endif %}
 });
 </script>
 <script>
@@ -917,8 +1014,77 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function saveAsDraft() {
-        // TODO: Implement save as draft logic
-        console.log('Save as Draft clicked');
+        // Gather all form data
+        const draftData = {
+            // Supplier details
+            supplier_name: document.querySelector('#supplier-name option:checked')?.text || '',
+            supplier_address: document.getElementById('supplier-address').value,
+            supplier_city: document.getElementById('supplier-city').value,
+            supplier_region: document.getElementById('supplier-region').value,
+            supplier_phone: document.getElementById('supplier-phone').value,
+            supplier_payment_terms: document.getElementById('supplier-payment-terms').value,
+
+            // Store details
+            store_name: document.querySelector('#store-name option:checked')?.text || '',
+            store_address: document.getElementById('store-address').value,
+            store_city: document.getElementById('store-city').value,
+            store_region: document.getElementById('store-region').value,
+            store_phone: document.getElementById('store-phone').value,
+
+            // Order details
+            reference_number: document.getElementById('reference-number').value || null,
+            ordered_date: document.getElementById('ordered-date').value || null,
+            expected_delivery_date: document.getElementById('expected-delivery-date').value || null,
+            shipped_by: document.getElementById('shipped-by').value,
+            shippment_preference: document.getElementById('shipment-preference').value,
+            notes: document.getElementById('notes').value,
+
+            // Product details as JSON
+            product_details: Array.from(document.querySelectorAll('#product-table tbody tr')).map(row => ({
+                name: row.querySelector('.product-name option:checked')?.text || '',
+                description: row.querySelector('.product-description').value,
+                uom: row.querySelector('.product-uom').value,
+                category: row.querySelector('.product-category').value,
+                quantity: row.querySelector('.product-quantity').value
+            })),
+
+            // Cost summary as JSON
+            cost_summary: Array.from(document.querySelectorAll('#cost-summary-table tbody tr')).map(row => ({
+                product_name: row.cells[0].textContent,
+                quantity: row.cells[1].textContent,
+                unit_cost: row.cells[2].textContent,
+                tax: row.cells[3].textContent,
+                subtotal: row.cells[4].textContent
+            })),
+
+            // Additional costs
+            shipping_cost: parseFloat(document.getElementById('shipping-cost').value) || 0,
+            discount: parseFloat(document.getElementById('discounts').value) || 0,
+            other_adjustments: parseFloat(document.getElementById('other-adjustments').value) || 0,
+            total_amount: parseFloat(document.getElementById('total-amount').value) || 0
+        };
+
+        // Send data to server
+        fetch('/purchase_order/save-draft/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(draftData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Draft saved successfully!');
+                window.location.href = '{% url "purchase_order_list" %}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error saving draft: ' + error);
+        });
     }
 
     function cancelPO() {

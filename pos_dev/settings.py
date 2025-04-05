@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'purchase_order',
     # 'wkhtmltopdf',
     'pricing.apps.PricingConfig',  # Keep only this one, remove the duplicate 'pricing'
+    'supplier',
 ]
 
 MIDDLEWARE = [

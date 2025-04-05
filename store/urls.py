@@ -5,8 +5,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('', views.homepage, name='homepage'),
-    # path('material-inward/', include('material_inward.urls', namespace='material_inward'))
-]
+   ]
 
 
 

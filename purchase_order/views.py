@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.db.models import Max
 from .models import POOrderHeader, Supplier, StoreDetails
 from django.shortcuts import get_object_or_404
-from .models import Product, ProductSupplierCost, POOrderLines
+from .models import Product, ProductSupplierCost, POOrderLines, PODrafts
 from django.db import connection
 from django.utils import timezone
 from django.db import transaction
@@ -24,8 +24,12 @@ def purchase_order_list(request):
     if status_filter and status_filter != 'All':
         po_orders = po_orders.filter(status=status_filter)
 
+    # Also fetch drafts
+    drafts = PODrafts.objects.all()
+
     return render(request, 'purchase_order/purchase_order.html', {
         'orders': po_orders,
+        'drafts': drafts,
         'search_query': search_query,  # Now passes empty string by default
         'status_filter': status_filter
     })
@@ -147,7 +151,7 @@ def save_purchase_order(request):
                         po_header_id, po_number, supplier_id, order_date, 
                         expected_delivery_date, total_order_value, status,
                         created_by, created_date, notes, reference_number,
-                        shipped_by, shippment_reference
+                        shipped_by, shippment_preference
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING po_header_id
@@ -203,3 +207,145 @@ def save_purchase_order(request):
     except Exception as e:
         print(f"Error saving purchase order: {str(e)}")
         return JsonResponse({'error': str(e)}, status=400)
+
+def save_draft(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        
+        with transaction.atomic():
+            draft = PODrafts.objects.create(
+                # Supplier details
+                supplier_name=data['supplier_name'],
+                supplier_address=data['supplier_address'],
+                supplier_city=data['supplier_city'],
+                supplier_region=data['supplier_region'],
+                supplier_phone_number=data['supplier_phone'],
+                supplier_payment_terms=data['supplier_payment_terms'],
+                
+                # Store details
+                store_name=data['store_name'],
+                store_address=data['store_address'],
+                store_city=data['store_city'],
+                store_region=data['store_region'],
+                store_phone_number=data['store_phone'],
+                
+                # Order details
+                reference_number=data.get('reference_number'),
+                ordered_date=data.get('ordered_date'),
+                expected_delivery_date=data.get('expected_delivery_date'),
+                shipped_by=data.get('shipped_by', 'None'),
+                shippment_preference=data.get('shippment_preference', 'None'),
+                notes=data.get('notes', 'None'),
+                
+                # Product and cost details
+                product_details=data['product_details'],
+                cost_summary=data['cost_summary'],
+                shipping_cost=data.get('shipping_cost', 0),
+                discount=data.get('discount', 0),
+                other_adjustments=data.get('other_adjustments', 0),
+                total_amount=data['total_amount']
+            )
+
+        return JsonResponse({'success': True, 'draft_id': draft.draft_id})
+    except Exception as e:
+        print(f"Error saving draft: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=400)
+
+def load_draft(request, draft_id):
+    try:
+        draft = PODrafts.objects.get(draft_id=draft_id)
+        
+        # Format dates for JavaScript
+        ordered_date = draft.ordered_date.strftime('%Y-%m-%d') if draft.ordered_date else ''
+        expected_delivery_date = draft.expected_delivery_date.strftime('%Y-%m-%d') if draft.expected_delivery_date else ''
+        
+        # Fetch all suppliers and stores for the form
+        suppliers = Supplier.objects.all()
+        stores = StoreDetails.objects.all()
+        my_store = StoreDetails.objects.filter(my_store='Yes').first()
+
+        # Get the next PO number
+        last_po = POOrderHeader.objects.aggregate(Max('po_number'))
+        last_po_number = last_po['po_number__max']
+        next_po_number = f"PO-{int(last_po_number.split('-')[1]) + 1}" if last_po_number else "PO-20231023"
+
+        # Convert Decimal objects to float for JSON serialization
+        draft_data = {
+            'draft_id': draft.draft_id,
+            'supplier_name': draft.supplier_name,
+            'supplier_address': draft.supplier_address,
+            'supplier_city': draft.supplier_city,
+            'supplier_region': draft.supplier_region,
+            'supplier_phone': draft.supplier_phone_number,
+            'supplier_payment_terms': draft.supplier_payment_terms,
+            'store_name': draft.store_name,
+            'store_address': draft.store_address,
+            'store_city': draft.store_city,
+            'store_region': draft.store_region,
+            'store_phone': draft.store_phone_number,
+            'reference_number': draft.reference_number,
+            'ordered_date': ordered_date,
+            'expected_delivery_date': expected_delivery_date,
+            'shipped_by': draft.shipped_by,
+            'shipment_preference': draft.shippment_preference,
+            'notes': draft.notes,
+            'product_details': draft.product_details,
+            'cost_summary': draft.cost_summary,
+            'shipping_cost': float(draft.shipping_cost),
+            'discount': float(draft.discount),
+            'other_adjustments': float(draft.other_adjustments),
+            'total_amount': float(draft.total_amount)
+        }
+
+        context = {
+            'next_po_number': next_po_number,
+            'suppliers': suppliers,
+            'stores': stores,
+            'my_store': my_store,
+            'draft_data': draft_data,
+        }
+
+        return render(request, 'purchase_order/add_po.html', context)
+    except PODrafts.DoesNotExist:
+        return JsonResponse({'error': 'Draft not found'}, status=404)
+
+def edit_draft(request, draft_id):
+    print("====== DEBUG: edit_draft called ======")
+    print(f"Draft ID: {draft_id}")
+    try:
+        draft = PODrafts.objects.get(draft_id=draft_id)
+        print(f"Found draft: {draft}")
+        print(f"Draft data:")
+        print(f"Supplier Name: {draft.supplier_name}")
+        print(f"Product Details: {draft.product_details}")
+        print(f"Cost Summary: {draft.cost_summary}")
+        
+        # Format dates for template
+        ordered_date = draft.ordered_date.strftime('%Y-%m-%d') if draft.ordered_date else ''
+        expected_delivery_date = draft.expected_delivery_date.strftime('%Y-%m-%d') if draft.expected_delivery_date else ''
+        
+        # Get lists for dropdowns
+        suppliers = Supplier.objects.all()
+        stores = StoreDetails.objects.all()
+        my_store = StoreDetails.objects.filter(my_store='Yes').first()
+
+        context = {
+            'draft': draft,
+            'ordered_date': ordered_date,
+            'expected_delivery_date': expected_delivery_date,
+            'suppliers': suppliers,
+            'stores': stores,
+            'my_store': my_store
+        }
+        
+        print(f"Context being sent to template: {context}")
+        return render(request, 'purchase_order/edit_draft.html', context)
+    except PODrafts.DoesNotExist as e:
+        print(f"Draft not found error: {e}")
+        return JsonResponse({'error': 'Draft not found'}, status=404)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)

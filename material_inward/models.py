@@ -6,7 +6,7 @@ class POOrderLines(models.Model):
     po_line_num = models.DecimalField(max_digits=10, decimal_places=1)
     po_header_id = models.IntegerField()
     po_number = models.CharField(max_length=50)
-    product_id = models.IntegerField()
+    product_id = models.CharField(max_length=120)
     product_name = models.CharField(max_length=255)
     priority = models.CharField(max_length=120)
     quantity_ordered = models.IntegerField()
@@ -22,3 +22,4 @@ class POOrderLines(models.Model):
 
     class Meta:
         db_table = '"pos_dev"."po_order_lines"'  # This explicitly tells Django to use "po_order_lines" table
+        managed = False

@@ -1,6 +1,237 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Welcome to the Putaway Module</h1>
-    <p>Manage your warehouse putaway process here.</p>
+{% csrf_token %}
+<div class="container">
+    <h1>Putaway Intransist</h1>
+
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Intransist ID</th>
+                    <th>Line ID</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Location Code</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in putaway_items %}
+                <tr data-putaway-id="{{ item.putaway_id }}">
+                    <td>{{ item.putaway_id }}</td>
+                    <td>{{ item.po_line_id }}</td>
+                    <td>{{ item.product_id }}</td>
+                    <td>{{ item.product.product_name }}</td>
+                    <td>
+                        <select class="location-select" {% if item.status == 'Completed' %}disabled{% endif %}>
+                            <option value="">Select Location</option>
+                            {% for location in locations %}
+                                <option value="{{ location.location_name }}" 
+                                        {% if location.location_name == item.location_name %}selected{% endif %}>
+                                    {{ location.location_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.status }}</td>
+                    <td>
+                        {% if item.status != 'Completed' %}
+                            <button class="btn btn-primary ok-btn" onclick="handleOkClick({{ item.putaway_id }})">Ok</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function handleOkClick(putawayId) {
+    const row = document.querySelector(`tr[data-putaway-id="${putawayId}"]`);
+    const locationSelect = row.querySelector('.location-select');
+    const selectedLocation = locationSelect.value;
+
+    if (!selectedLocation) {
+        alert('Please select a valid location code');
+        return;
+    }
+
+    if (confirm('Would you like to add the item to the inventory?')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/putaway/update/${putawayId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            },
+            body: `location_name=${encodeURIComponent(selectedLocation)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Remove the entire row instead of just disabling
+                const row = document.querySelector(`tr[data-putaway-id="${putawayId}"]`);
+                row.remove();
+            } else {
+                alert(data.message || 'Error updating location');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating location');
+        });
+    }
+}
+</script>
+
+<style>
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+    padding: 25px;
+}
+
+/* Headings */
+h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 24px;
+}
+
+/* Table Styles */
+.table-wrapper {
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    border-radius: 6px;
+    margin-bottom: 25px;
+    table-layout: fixed;
+}
+
+.table thead th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+    position: sticky;
+    top: 0;
+}
+
+.table thead th:first-child {
+    border-top-left-radius: 6px;
+}
+
+.table thead th:last-child {
+    border-top-right-radius: 6px;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Location Select Styles */
+.location-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.location-select:focus {
+    outline: none;
+    border-color: #4a6cf7;
+    box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.1);
+}
+
+.location-select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+/* Button Styles */
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #4a6cf7;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #3a5de6;
+}
+
+/* Status Styles */
+td:nth-child(7) { /* Status column */
+    font-weight: 500;
+}
+
+td:nth-child(7):contains('Pending') {
+    color: #f59e0b;
+}
+
+td:nth-child(7):contains('Completed') {
+    color: #10b981;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+}
+</style>
 {% endblock %}

@@ -1,6 +1,38 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Welcome to Supermarket Management</h1>
-    <p>Manage your operations efficiently</p>
+<div class="container text-center mt-5">
+    <h1 class="display-4">Supermarket Management System</h1>
+    <p class="lead">Streamline your operations from purchase to billing with ease.</p>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card shadow-lg p-3 mb-4 bg-white rounded">
+                <i class="fas fa-shopping-cart fa-3x text-primary mb-3"></i>
+                <h4>Purchase Orders</h4>
+                <p>Manage your supplier orders efficiently with detailed tracking.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-lg p-3 mb-4 bg-white rounded">
+                <i class="fas fa-warehouse fa-3x text-success mb-3"></i>
+                <h4>Inventory Management</h4>
+                <p>Track stock levels, restock alerts, and inventory movement.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-lg p-3 mb-4 bg-white rounded">
+                <i class="fas fa-receipt fa-3x text-warning mb-3"></i>
+                <h4>Billing System</h4>
+                <p>Generate invoices, manage discounts, and improve checkout speed.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'purchase_order_list' %}" class="btn btn-primary btn-lg">Create a Purchase Order</a>
+    </div>
+</div>
 {% endblock %}

@@ -25,4 +25,5 @@ urlpatterns = [
     path('billing/' ,include('billing.urls')),
     path('purchase_order/', include('purchase_order.urls')),
     path('pricing/', include('pricing.urls', namespace='pricing')),
+    path('supplier/', include('supplier.urls')),
 ]

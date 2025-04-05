@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>New Supplier Details</h1>
+    
+    <form method="POST" class="supplier-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="landline_number">Landline Number</label>
+            <input type="text" id="landline_number" name="landline_number" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="phone_number">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" required class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="contact_person">Contact Person</label>
+            <input type="text" id="contact_person" name="contact_person" required class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" required class="form-control"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="region">Region</label>
+            <select id="region" name="region" required class="form-control">
+                <option value="">Select Region</option>
+                {% for region in region_city_map.keys %}
+                    <option value="{{ region }}">{{ region }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="city">City/Town</label>
+            <select id="city" name="city" required class="form-control">
+                <option value="">Select City</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="payment_terms">Payment Terms</label>
+            <select id="payment_terms" name="payment_terms" required class="form-control">
+                <option value="">Select Payment Terms</option>
+                {% for term in payment_terms_choices %}
+                    <option value="{{ term }}">{{ term }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'supplier_home' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .container {
+        max-width: 800px;
+        padding: 20px;
+    }
+
+    h1 {
+        margin-bottom: 30px;
+        color: #2c3e50;
+    }
+
+    .supplier-form {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #4a5568;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4a6cf7;
+        box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.1);
+    }
+
+    .button-group {
+        margin-top: 30px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background-color: #4a6cf7;
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #3a5de6;
+    }
+
+    .btn-secondary {
+        background-color: #f1f2f6;
+        color: #4b5563;
+        border: 1px solid #e0e0e0;
+        text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: #e5e7eb;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const regionSelect = document.getElementById('region');
+    const citySelect = document.getElementById('city');
+    
+    // Store region-city mapping from backend
+    const regionCityMap = {
+        {% for region, cities in region_city_map.items %}
+            "{{ region }}": {{ cities|safe }},
+        {% endfor %}
+    };
+
+    // Store city-region mapping for reverse lookup
+    const cityRegionMap = {};
+    Object.entries(regionCityMap).forEach(([region, cities]) => {
+        cities.forEach(city => {
+            cityRegionMap[city] = region;
+        });
+    });
+
+    function updateCityDropdown(selectedRegion) {
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        if (selectedRegion) {
+            regionCityMap[selectedRegion].sort().forEach(city => {
+                citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+            });
+        }
+    }
+
+    function updateRegionDropdown(selectedCity) {
+        if (selectedCity && cityRegionMap[selectedCity]) {
+            regionSelect.value = cityRegionMap[selectedCity];
+        }
+    }
+
+    // Event listener for region change
+    regionSelect.addEventListener('change', function() {
+        updateCityDropdown(this.value);
+    });
+
+    // Event listener for city change
+    citySelect.addEventListener('change', function() {
+        updateRegionDropdown(this.value);
+    });
+
+    // Initialize city dropdown if region is pre-selected
+    if (regionSelect.value) {
+        updateCityDropdown(regionSelect.value);
+    }
+});
+</script>
+{% endblock %}
