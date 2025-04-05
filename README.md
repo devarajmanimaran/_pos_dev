@@ -1,6 +1,6 @@
 ---
 
-## **NextGen ERP & CRM Platform**
+## **Newera ERP & CRM Platform**
 ### **Empowering Businesses to Run Smarter and Smoother**
 
 ---
